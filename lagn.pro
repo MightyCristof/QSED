@@ -29,7 +29,7 @@
 ;   The call to LUMDIST() is computationally intensive for large input arrays. To 
 ;	reduce the computation time, a sparse redshift array is used in the call to 
 ;	LUMDIST(), and the results are then interpolated to the input redshift values.
-;	The redshift range covers 0.001 < z < 11.303.
+;	The redshift range covers min(z) < z < 29.9.
 ;
 ; EXAMPLES:
 ;	IDL> load_comp,'components4.sav',/push
@@ -69,10 +69,10 @@ coeff = reform(coefficient)
 ;; flux density Fnu [erg/s/cm2/Hz] at desired wavelength
 fnu0 = interpol(comp.agn,comp.wav,w0)
 kap0 = interpol(comp.kap,comp.wav,w0)
-fnu = coeff * fnu0 * 10d^(-0.4*kap0*ebv) * 1e-29			;; convert microjansky to cgs units
+fnu = coeff * fnu0 * 10d^(-0.4*kap0*ebv) * 1e-29		;; convert microjansky to cgs units
 nu = !const.c/(w0*1e-6)									;; convert w0 from micron to m
 ;; luminosity distance dL [cm2]
-testz = 10.^(dindgen(110)/100)-0.999d					;; range of z values to calculate dL
+testz = 10.^(dindgen(150)/100.)-(1.-min(z))				;; range of z values to calculate dL
 dl = lumdist(testz,h0=70.,omega_m=0.3,lambda0=0.7)		;; luminosity distance in Mpc; dL = (1+z)c ºdz/H(z)
 dl = interpol(dl,testz,z)								;; interpolation to input redshift
 dl *= 1e6 * !const.parsec * 1e2 						;; luminosity distance converted from Mpc to cm

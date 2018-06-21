@@ -33,7 +33,7 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;	NXDX.PRO
+;	NDX2.PRO
 ;	
 ; REVISION HISTORY:
 ;   2016-Aug-24  Written by Christopher M. Carroll (Dartmouth)

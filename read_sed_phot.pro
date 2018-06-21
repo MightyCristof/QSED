@@ -23,6 +23,8 @@
 ; OPTIONAL OUTPUTS:
 ;  
 ; COMMENTS:
+;	WISE reject mask directory and mask name must be changed for personal use.
+;
 ;	At current, sources need to pass the following criteria:
 ;		1. Have redshift information
 ;		2. Photometry S/N≥3 (≥1 for forced photometry)

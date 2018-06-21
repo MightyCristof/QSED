@@ -143,7 +143,7 @@ tlen = n_elements(comp)  			;; number of template components (AGN+galaxies)
 flen = n_elements(obswav)        	;; number of photometric filters
 
 ;; select template components
-temps = ['AGN','E','SBC','IM','DUST']		;; all possible templates (SED modeling procedure can handle max=5 templates)
+temps = ['AGN','ELL','SFG','IRR','DST']		;; all possible templates (SED modeling procedure can handle max=5 templates)
 match2,tag_names(comp),temps,icomp,itemp	;; match input components (use MATCH2.PRO to keep named order of TEMPS; MATCH.PRO alphabetizes; important for plotting purposes)
 if (total(itemp ne -1) le 0) then stop		;; ensure we contain at least one valid template
 temps = temps[where(itemp ne -1)]

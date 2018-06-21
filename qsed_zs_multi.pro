@@ -21,10 +21,19 @@
 ; OPTIONAL OUTPUTS:
 ;  
 ; COMMENTS:
-;   
+;   It is important to note that this procedure matches the input redshift of a source
+;	to the template redshift (to the third decimal). This matched redshift is saved
+;	as the best-fit parameter redshift in the second column of param. While this redshift
+;	is generally acceptable, it can cause issues as it is not the measured redshift of 
+;	the source (e.g., For source redshifts between zero and the first bin in the template
+;	redshift grid, best-fit redshift can be set to zero. This can lead to a luminosity 
+;	distance of zero, no calculated luminosity, etc.) It is always best to use the source 
+;	redshift in all post processing!
+;	
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;	NXDX.PRO
 ;	
 ; REVISION HISTORY:
 ;   2016-Aug-24  Written by Christopher M. Carroll (Dartmouth)

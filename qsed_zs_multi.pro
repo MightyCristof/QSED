@@ -73,7 +73,7 @@ if (ct ne 0) then print, 'Template redshift range insufficient to model data', s
 
 ;; match template bandpass with observed photometry
 ifilt = []
-for i = 0,n_elements(filts)-1 do ifilt = [ifilt,where(filts[i] eq wavband)]
+for i = 0,n_elements(filts)-1 do ifilt = [ifilt,where(filts[i] eq wavband,/null)]
 tmp = temp[ifilt,*,loc,*]
 band = filts[ifilt]
 obswv = obswav[ifilt]				;; needed to match properly for plotting!
@@ -83,7 +83,7 @@ ztmp = ztemp[loc]
 numt = n_elements(tmp[0,0,0,*])		;; number of galaxy tmplates
 clen = n_elements(ebv_agn)        	;; length of color vector
 zlen = n_elements(ztmp)          	;; length of redshift vector
-nobj = n_elements(ztmpd)		      	;; number of sources
+nobj = n_elements(ztmp)		      	;; number of sources
 
 ;; create best fit array
 param = dblarr(4+numt,nobj)

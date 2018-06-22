@@ -17,7 +17,10 @@
 ;	/FORCED_SN		- Require all WISE forced photometry to have S/N≥1.
 ;	
 ; OUTPUTS:
-;	obs				- Structure containing all data for SED modeling. 
+;	obs				- Structure containing all data for SED modeling. Subject to change!
+;                     Common contents include: Object ID, RA, Dec, mag+error, flux+error,
+;                     good photometry flag (bin), redshift+error, string containing all
+;                     redshift+error from multiple sources (zarr+e_zarr).
 ;	band			- Array of central wavelength for photometric data. 
 ;   
 ; OPTIONAL OUTPUTS:

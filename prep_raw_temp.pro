@@ -45,7 +45,7 @@ print, ' '
 temp_dir = '~/Research/sed_models/raw_templates/'
 a10 = 'assef+10/lrt_templates.dat'
 ext = 'assef+10/ext_law_data.dat'
-k15 = 'kirkpatrick+15/Comprehensive_library/SFG3.txt'
+k15 = 'kirkpatrick+15/Comprehensive_library/SFG2.txt'
 
 ;; read A10 templates
 readcol,temp_dir+a10,wav,agn,ell,sbc,irr,format='d,d,x,d,d,d',/silent
@@ -95,7 +95,7 @@ comp = replicate(comp,n_elements(wav))
 tags = ['wav','kap','agn','ell','sfg','irr']		;; A10 templates + K15 SFG3
 for i = 0,n_elements(tags)-1 do re = execute('comp.(i) = '+tags[i])
 
-save, comp, file='components4.sav'
+save, comp, file='comp4.sav'
 
 
 END

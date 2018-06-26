@@ -266,33 +266,29 @@ for f = 0,n_elements(file)-1 do begin
 	;; byte index for good photometry
 	obs.bin = obs.flux gt 0. and obs.e_flux gt 0.				
 
-	;; add redshift data
-	;; (1) ZP    == SDSS DR12 Photo-z
-	;; (2) PEAKZ == XDQSO
-	;; (3) ZS    == SDSS DR12
-	;; (4) Z_R08 == Reyes+08
-	;; (5) Z_L13 == Lacy+13
-	;; (6) Z_Y16 == Yuan+16 (SDSS DR12 BOSS)
-	zstr = ['zp','peakz','zs','z_reyes08','z_lacy13','z_yuan16']
-	e_zstr = ['zperr','peakfwhm','zserr','','',''] 
+	;; full redshift data set
+	;; (1) ZP     == SDSS DR14 phot-z
+	;; (2) PEAKZ  == XDQSOz (DiPompeo+15)
+	;; (3) ZS     == SDSS DR14 spec-z
+	;; (4) Z_SUPP == Reyes+08, Lacy+13, Hainline+14, Yuan+16
+	zstr = ['zp','peakz','zs','z_zsupp']
+	e_zstr = ['zperr','peakfwhm','zserr','cat_zsupp']	;; on (4) returns source catalog
 	zarr = strarr(ndata)			;; all redshift data
 	e_zarr = strarr(ndata)			;; all redshift error data
 	z = dblarr(ndata)				;; "best" redshift value
 	e_z = dblarr(ndata)				;; "best" redshift error value
+	;; trust SDSS photometric redshifts only when photoerrorclass == 1
+	iphotz = where(data.clean eq 1,complement=inphotz,ncomplement=nphotz)
+	if (nphotz gt 0) then data[inphotz].zp = -9999.
+	;; sort redshift data
 	for i = 0,n_elements(zstr)-1 do begin
-		;; trust SDSS photometric redshifts only when photoerrorclass == 1
-		if (zstr[i] eq 'zp') then re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0. and data.photoerrorclass eq 1,zlen)') else $
-								  re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0.,zlen)')
+		re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0.,zlen)')
 		if (zlen gt 0.) then begin
 			re = execute('zarr[iz] += strtrim(data[iz].'+zstr[i]+',2)')
 			re = execute('z[iz] = data[iz].'+zstr[i])
-			if (i lt 3) then begin
-				;; where there exists redshift error data...
-				re = execute('e_zarr[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
-				re = execute('e_z[iz] = data[iz].'+e_zstr[i])
-			endif else $
-				;; ... else error == -9999
-				e_z[iz] = -9999.
+			re = execute('e_zarr[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
+			if (e_zstr[i] ne 'cat_zsupp') then re = execute('e_z[iz] = data[iz].'+e_zstr[i]) else $
+			                                   e_z[iz] = -9999.
 		endif
 		zarr += ','
 		e_zarr += ','

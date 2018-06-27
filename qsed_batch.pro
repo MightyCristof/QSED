@@ -66,7 +66,7 @@ for i = 0,n_elements(files)-1 do begin
 		qsed_zs_multi,batch_obs,band			;; call SED modeling procedure
 	endfor	
 endfor
-toc
+;toc
 
 ;; concatenate batched modeling outputs into single variables
 fit_file = file_search('fits_*')						;; name of all batched output files

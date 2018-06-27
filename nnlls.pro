@@ -15,7 +15,8 @@
 ;	tall			- Array of template grid to compute contribution/coefficients.
 ;
 ; OPTIONAL INPUTS:
-;   
+;   /NNEG			- Keyword to set negative coefficients to zero.
+;
 ; OUTPUTS:
 ;	call			- Array of template coefficients.
 ;
@@ -33,7 +34,8 @@
 ;-----------------------------------------------------------------------------------------
 FUNCTION nnlls, flx, $
                 err, $
-                tall
+                tall, $
+                NNEG = nneg
 
 
 sz = size(tall,/dim)							;; dimensions of tall

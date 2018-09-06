@@ -143,9 +143,9 @@ tlen = n_elements(comp)  			;; number of template components (AGN+galaxies)
 flen = n_elements(obswav)        	;; number of photometric filters
 
 ;; select template components
-temps = ['AGN','ELL','SFG','IRR','DST']		;; all possible templates (SED modeling procedure can handle max=5 templates)
-match2,tag_names(comp),temps,icomp,itemp	;; match input components (use MATCH2.PRO to keep named order of TEMPS; MATCH.PRO alphabetizes; important for plotting purposes)
-if (total(itemp ne -1) le 0) then stop		;; ensure we contain at least one valid template
+temps = ['AGN','AGN2','ELL','SBC','SFG','IRR','DST']	;; all possible templates (SED modeling procedure can handle max=5 templates)
+match2,tag_names(comp),temps,icomp,itemp	            ;; match input components (use MATCH2.PRO to keep named order of TEMPS; MATCH.PRO alphabetizes; important for plotting purposes)
+if (total(itemp ne -1) le 0) then stop		            ;; ensure we contain at least one valid template
 temps = temps[where(itemp ne -1)]
                           
 ;; blank array, named variable
@@ -157,10 +157,13 @@ kap = comp.kap
 
 ;; construct templates
 for i = 0,n_elements(temps)-1 do begin
-	if (temps[i] eq 'AGN') then begin
-		agn = rebin(comp.agn,tlen,1,clen)*transpose(10.^(-0.4 * ebv_agn # kap))		;; attenuate AGN and add color dimension
-		agn = rebin(agn,tlen,zlen,clen)												;; add redshift dimension
+	if (strmatch(temps[i],'AGN*')) then begin
+	    re = execute(temps[i]+' = rebin(comp.'+temps[i]+',tlen,1,clen)*transpose(10.^(-0.4 * ebv_agn # kap))')
+		;agn = rebin(comp.(where(strmatch(tag_names(comp),'AGN*'))),tlen,1,clen)*transpose(10.^(-0.4 * ebv_agn # kap))		
+		re = execute(temps[i]+'= rebin('+temps[i]+',tlen,zlen,clen)')
+		;agn = rebin(agn,tlen,zlen,clen)											;; add redshift dimension
 		agn_pts = dblarr(flen,zlen,clen)											;; blank array for convolved AGN template
+		re = execute(pts[i]+' = dblarr(flen,zlen,clen)')
 	endif else begin
 		re = execute(temps[i]+' = rebin(comp.'+temps[i]+',tlen,zlen)')				;; add redshift dimension
 		re = execute(pts[i]+' = dblarr(flen,zlen)')									;; blank arrays for convolved galaxy templates
@@ -197,8 +200,8 @@ foreach instr, bp_names do begin
 		ifilt = where(strmatch(wavband,instr+strtrim(band+1,2)) eq 1,ct)	;; match bandpass filter (BAND) to template output (WAVBAND)
 		if (ct eq 0) then stop								;; did you goof?
 		for pt = 0,n_elements(pts)-1 do begin				;; fill the convolved template array
-			if (temps[pt] eq 'AGN') then re = execute(pts[pt]+'[ifilt,*,*] = total('+temps[pt]+' * rebin(thru,tlen,zlen,clen) * rebin(dnu,tlen,zlen,clen),1)')
-										 re = execute(pts[pt]+'[ifilt,*] = total('+temps[pt]+' * thru * dnu,1)')
+			if (strmatch(temps[pt],'AGN*')) then re = execute(pts[pt]+'[ifilt,*,*] = total('+temps[pt]+' * rebin(thru,tlen,zlen,clen) * rebin(dnu,tlen,zlen,clen),1)')
+										         re = execute(pts[pt]+'[ifilt,*] = total('+temps[pt]+' * thru * dnu,1)')
 		endfor
 	endfor
 endforeach
@@ -207,8 +210,8 @@ print, 'Bandpass templates created and normalized'
 ;;create grid array of galaxy templates
 temp = dblarr(flen,clen,zlen,n_elements(pts))
 for i = 0,n_elements(pts)-1 do begin
-	if (temps[i] eq 'AGN') then for j = 0,flen-1 do re = execute('temp[j,*,*,0] = transpose('+pts[0]+'[j,*,*])') else $
-											        re = execute('temp[*,*,*,i] = rebin(reform('+pts[i]+',flen,1,zlen),flen,clen,zlen)')
+	if (strmatch(temps[i],'AGN*')) then for j = 0,flen-1 do re = execute('temp[j,*,*,0] = transpose('+pts[0]+'[j,*,*])') else $
+											                re = execute('temp[*,*,*,i] = rebin(reform('+pts[i]+',flen,1,zlen),flen,clen,zlen)')
 endfor
 
 save,temp,wavband,obswav,ztemp,ebv_agn,/compress,file=savfile

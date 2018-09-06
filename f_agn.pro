@@ -1,12 +1,12 @@
 ;-----------------------------------------------------------------------------------------
 ; NAME:                                                                       IDL Function
-;	fagn
+;	f_agn
 ;
 ; PURPOSE:
 ;	Calculate the AGN fraction (intrinsic and observed) at a desired wavelength.
 ;	   
 ; CALLING SEQUENCE:
-;   fagn = fagn( w0, fits, [, MODEL= ] )
+;   fa = f_agn( w0, fits, [, MODEL= ] )
 ;
 ; INPUTS:
 ;	w0				- Scalar value of desired wavelength in microns.
@@ -25,16 +25,16 @@
 ; EXAMPLES:
 ;	IDL> load_comp,'components4.sav',/push
 ;		% Compiled module: LOAD_COMP.
-;	IDL> fagn = fagn(1.,param,model=md)
-;	IDL> help, fagn
-;		FAGN            STRUCT    = -> <Anonymous> Array[5097251]
-;	IDL> help, fagn,/st
+;	IDL> fa = f_agn(1.,param,model=md)
+;	IDL> help, fa
+;		FA              STRUCT    = -> <Anonymous> Array[5097251]
+;	IDL> help, fa, /st
 ;		** Structure <d6f9ccb8>, 2 tags, length=16, data length=16, refs=1:
 ;	   		INT             DOUBLE           0.0000000
 ;	   		OBS             DOUBLE           0.0000000
 ;	IDL> help, md
 ;		MD              STRUCT    = -> <Anonymous> Array[5097251]
-;	IDL> help, md,/st
+;	IDL> help, md, /st
 ;		** Structure <d6f9c348>, 3 tags, length=24, data length=24, refs=1:
 ;	   		AGN_INT         DOUBLE           0.0000000
 ;	   		AGN_OBS         DOUBLE           0.0000000
@@ -43,9 +43,9 @@
 ; REVISION HISTORY:
 ;   2017-Feb-17  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-FUNCTION fagn, w0, $
-               fits, $
-               MODEL = out_model
+FUNCTION f_agn, w0, $
+                fits, $
+                MODEL = out_model
                
 
 ;; load template components variables
@@ -88,13 +88,13 @@ out_model.(1) = observed_agn
 out_model.(2) = galaxy
 model = out_model
 
-;; fagn output structure
+;; fa output structure
 object = {int:0d,obs:0d}
-fagn = replicate(object,n_elements(z))
-fagn.(0) = intrinsic
-fagn.(1) = observed
+fa = replicate(object,n_elements(z))
+fa.(0) = intrinsic
+fa.(1) = observed
 
-return, fagn
+return, fa
 
 
 END

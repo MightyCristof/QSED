@@ -48,7 +48,10 @@ ext = 'assef+10/ext_law_data.dat'
 k15 = 'kirkpatrick+15/Comprehensive_library/SFG2.txt'
 
 ;; read A10 templates
-readcol,temp_dir+a10,wav,agn,ell,sbc,irr,format='d,d,x,d,d,d',/silent
+readcol,temp_dir+a10,wav,agn,agn2,ell,sbc,irr,format='d,d,d,d,d,d',/silent
+temps = ['AGN','AGN2','ELL','SBC','IRR']
+;; Assef raw data conversion from "lrt_templates.dat"
+convrs = [1d-11,1d-14,1d-16,1d-17,1d-15]
 ;; read extinction law data
 readcol,temp_dir+ext,extwav,extkap,format='d,d',/silent
 ;; convert extinction law wavelengths from Ångstrom to micrometers
@@ -57,10 +60,7 @@ extwav *= 1e-4
 kap = spline(extwav,extkap,wav)
 ;; covert A10 templates to microjansky
 erg2mujy = 1e29
-agn *= erg2mujy * 1d-11
-ell *= erg2mujy * 1d-16
-sbc *= erg2mujy * 1d-17 
-irr *= erg2mujy * 1d-15
+for i = 0,n_elements(temps)-1 do re = execute(temps[i]+' *= erg2mujy * convrs[i]')
 
 ;; read K15 SFG3 template
 readcol,temp_dir+k15,wavlen,lum,dlnu,format='d,d,d'
@@ -84,7 +84,9 @@ sfg = [sbc[0:loc],sfg]
 comp = {wav: 0d, $
         kap: 0d, $
         agn: 0d, $
+        agn2: 0d, $
         ell: 0d, $
+        sbc: 0d, $
         sfg: 0d, $
         irr: 0d $
         }
@@ -92,7 +94,8 @@ comp = replicate(comp,n_elements(wav))
 
 ;; fill component structure
 ;tags = ['wav','kap','agn','ell','sbc','irr']		;; A10 templates
-tags = ['wav','kap','agn','ell','sfg','irr']		;; A10 templates + K15 SFG3
+;tags = ['wav','kap','agn','ell','sfg','irr']		;; A10 templates + K15 SFG
+tags = ['wav','kap','agn','agn2','ell','sbc','sfg','irr']  ;; A10 all tempaltes + K15 SFG
 for i = 0,n_elements(tags)-1 do re = execute('comp.(i) = '+tags[i])
 
 save, comp, file='comp4.sav'

@@ -1,12 +1,12 @@
 ;-----------------------------------------------------------------------------------------
 ; NAME:                                                                       IDL Function
-;	lagn
+;	l_agn
 ;
 ; PURPOSE:
 ;	Calculate AGN luminosity at a desired wavelength using the Asesf+10 AGN tempalate.
 ; 
 ; CALLING SEQUENCE:
-;   lum = lagn( w0, ebv, z, coeff, [, /LOG ] )
+;   lum = l_agn( w0, ebv, z, coeff, [, /LOG ] )
 ;	
 ; INPUTS:
 ;	w0				- Scalar value of desired wavelength in microns.
@@ -33,7 +33,7 @@
 ;
 ; EXAMPLES:
 ;	IDL> load_comp,'components4.sav',/push
-;	IDL> lum6 = lagn(6.,param[0,*],z,param[2,*],/log)
+;	IDL> lum6 = l_agn(6.,param[0,*],z,param[2,*],/log)
 ;	IDL> for i = 0,10 do print, param[2,i], lum6[i]
 ;	       0.0000000       0.0000000
 ;	       0.0000000       0.0000000
@@ -52,11 +52,11 @@
 ; REVISION HISTORY:
 ;   2017-May-12  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-FUNCTION lagn, w0, $
-			   color, $
-			   redshift, $
-			   coefficient, $
-			   LOG = log
+FUNCTION l_agn, w0, $
+			    color, $
+			    redshift, $
+			    coefficient, $
+			    LOG = log
 
 
 ;; load template component variables
@@ -66,8 +66,13 @@ ebv = reform(color)
 z = reform(redshift)
 coeff = reform(coefficient)
 
+;; determine AGN template
+iagn = where(strmatch(tag_names(comp),'AGN*'),agnct)    ;; match COMP to find AGN template
+if (agnct ne 1) then stop                               ;; ensure there is an AGN template
+agn = comp.(iagn)                                       ;; extract AGN template from COMP
+
 ;; flux density Fnu [erg/s/cm2/Hz] at desired wavelength
-fnu0 = interpol(comp.agn,comp.wav,w0)
+fnu0 = interpol(agn,comp.wav,w0)
 kap0 = interpol(comp.kap,comp.wav,w0)
 fnu = coeff * fnu0 * 10d^(-0.4*kap0*ebv) * 1e-29		;; convert microjansky to cgs units
 nu = !const.c/(w0*1e-6)									;; convert w0 from micron to m

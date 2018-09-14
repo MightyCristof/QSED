@@ -16,7 +16,7 @@
 ;   param			- Array of best fit parameters (per object):
 ;					  [E(B-v), z, C_AGN, C_ELL, C_SFG, C_IRR, chi-square, DoF]
 ;	band			- String array of photometric filters, matched phot to template.
-;	obswv			- Array of central wavelength values, matched phot to template.
+;	wave			- Array of central wavelength values, matched phot to template.
 ;
 ; OPTIONAL OUTPUTS:
 ;  
@@ -75,8 +75,8 @@ if (ct ne 0) then print, 'Template redshift range insufficient to model data', s
 ifilt = []
 for i = 0,n_elements(filts)-1 do ifilt = [ifilt,where(filts[i] eq wavband,/null)]
 tmp = temp[ifilt,*,loc,*]
-band = filts[ifilt]
-obswv = obswav[ifilt]				;; needed to match properly for plotting!
+band = wavband[ifilt]
+wave = obswav[ifilt]				;; needed to match properly for plotting!
 ztmp = ztemp[loc]
 
 ;;commonly used array sizes
@@ -115,7 +115,7 @@ endfor
 param[0,where(param[2,*] eq 0.,/NULL)] = 0.
 
 ;; save modeling parameters
-sav_vars = ['PARAM','BAND','OBSWV',phot_tags]
+sav_vars = ['PARAM','BAND','WAVE',phot_tags]
 sav_vars = strjoin(sav_vars,',')
 re = execute('save,'+sav_vars+',/compress,file="fits_"+date_str')
 

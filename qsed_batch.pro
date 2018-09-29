@@ -102,9 +102,8 @@ endfor
 ;; restore variables to original names
 for i = 0,nvars-1 do re = execute(vars[ivar[i]]+' = '+temp_vars[i])
 ;; save concatenated SED modeling variables in top directory
-var_str = strjoin(vars,',')
 popd
-re = execute('save,'+var_str+',/compress,file="fits.sav"')
+re = execute('save,'+strjoin(vars,",")+',/compress,file="fits.sav"')
 popd
 
 

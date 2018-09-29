@@ -41,6 +41,7 @@ print, 'prep_raw_temp'
 print, 'Version 1.0'
 print, ' '
 
+
 ;; input data files
 temp_dir = '~/Research/sed_models/raw_templates/'
 a10 = 'assef+10/lrt_templates.dat'
@@ -87,18 +88,16 @@ comp = {wav: 0d, $
         agn2: 0d, $
         ell: 0d, $
         sbc: 0d, $
-        sfg: 0d, $
-        irr: 0d $
+        irr: 0d, $
+        sfg: 0d $
         }
 comp = replicate(comp,n_elements(wav))
 
 ;; fill component structure
-;tags = ['wav','kap','agn','ell','sbc','irr']		;; A10 templates
-;tags = ['wav','kap','agn','ell','sfg','irr']		;; A10 templates + K15 SFG
-tags = ['wav','kap','agn','agn2','ell','sbc','sfg','irr']  ;; A10 all tempaltes + K15 SFG
+tags = tag_names(comp)		  ;; A10 all tempaltes + K15 SFG
 for i = 0,n_elements(tags)-1 do re = execute('comp.(i) = '+tags[i])
 
-save, comp, file='comp4.sav'
+save, comp, file='comp.sav'
 
 
 END

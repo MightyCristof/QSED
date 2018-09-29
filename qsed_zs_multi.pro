@@ -10,6 +10,8 @@
 ; INPUTS:
 ;	phot			- Input IDL structure of source photometry and data.
 ;   filts			- String array of photometric filters, matched to phot.
+;	suffx			- String to append to output filename.
+;	
 ; OPTIONAL INPUTS:
 ;   
 ; OUTPUTS:
@@ -39,20 +41,10 @@
 ;   2016-Aug-24  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
 PRO qsed_zs_multi, phot, $
-				   filts
+				   filts, $
+				   suffx
 
-		
-;; directory name
-fs = '(I2.2)'
-caldat, julday(), mon, d, y, h, m, s
-date_str = string(y, format='(I4.2)') + $
-          string(mon, format=fs) + $
-          string(d, format=fs) + '_' + $
-          string(h, format=fs) + '_' + $
-          string(m, format=fs) + '_' + $
-          string(s, format=fs) + $
-          '.sav'
-			
+					
 ;; load object data
 phot_tags = tag_names(phot)
 ;; extract photometry variables
@@ -116,8 +108,10 @@ param[0,where(param[2,*] eq 0.,/NULL)] = 0.
 
 ;; save modeling parameters
 sav_vars = ['PARAM','BAND','WAVE',phot_tags]
-sav_vars = strjoin(sav_vars,',')
-re = execute('save,'+sav_vars+',/compress,file="fits_"+date_str')
+sav_str = strjoin(sav_vars,',')
+;re = execute('save,'+sav_vars+',/compress,file="fits_"+date_str')
+if (n_elements(suffx) eq 0) then suffx = '.sav' else suffx = '-'+suffx+'.sav'
+re = execute('save,'+sav_str+',/compress,file="fits"+suffx')
 
 
 END

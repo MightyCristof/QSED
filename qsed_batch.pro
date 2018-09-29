@@ -33,13 +33,13 @@ PRO qsed_batch, files
 
 ;; create runtime directory
 fs = '(I2.2)'
-caldat, julday(), mon, d, y, h, min
-date_str = string(y, format='(I4.2)') + $
+caldat, julday(), mon, d, y, h, m
+fit_str = string(y, format='(I4.2)') + $
           string(mon, format=fs) + $
           string(d, format=fs) + '_' + $
           string(h, format=fs) + $
-          string(min, format=fs)
-fit_dir = 'run_' + date_str
+          string(m, format=fs)
+fit_dir = 'run_' + fit_str
 file_mkdir, fit_dir
 pushd, fit_dir
 
@@ -47,8 +47,13 @@ pushd, fit_dir
 load_gt,'galtemp_sed4.sav',/push
 
 ;; directory for all batched output files
-file_mkdir, 'fit_output'
-pushd, 'fit_output'
+file_mkdir, 'batch_output'
+pushd, 'batch_output'
+
+;; create date string
+date_str = string(y, format='(I4.2)') + $
+           string(mon, format=fs) + $
+           string(d, format=fs) + '-'
 
 ;tic
 ;; batch sources and run fitting
@@ -59,33 +64,43 @@ for i = 0,n_elements(files)-1 do begin
 	nobj = n_elements(obs)						;; number of sources in file
 	bsize = 100000.								;; batch size
 	nbatches = ceil(nobj/bsize)					;; number of batches
+	;; create sky section string
+	sky_str = strsplit(files[i],'-_',/extract)
+	sky_str = date_str+sky_str[where(strmatch(sky_str,'part*'))]
+	;; begin batch fitting
 	nleft = nobj								;; number of sources left in batch
 	for b = 0,nbatches-1 do begin
-		nleft = nleft-bsize > 0					;; track the remaining number of sources
+		;; create batch file string
+		sav_str = sky_str+'-'+string(b,format='(I02)')
+		nleft = nleft-bsize > 0								;; track the remaining number of sources
 		batch_obs = obs[b*bsize:(b+1)*bsize-1 < (nobj-1)]	;; temporary data structure
-		qsed_zs_multi,batch_obs,band			;; call SED modeling procedure
+		qsed_zs_multi,batch_obs,band,sav_str				;; call SED modeling procedure
 	endfor	
 endfor
 ;toc
 
 ;; concatenate batched modeling outputs into single variables
-fit_file = file_search('fits_*')						;; name of all batched output files
+fit_file = file_search('fits-*')						;; name of all batched output files
 object = OBJ_NEW('IDL_Savefile', fit_file[0])			;; create IDL object
 vars = object->names()									;; pull variable names
-temp_vars = 'TEMP_'+vars								;; create temporary variables
-for i = 0,n_elements(temp_vars)-1 do re = execute(temp_vars[i]+' = []')
+ivar = where(~strmatch(vars,'BAND') and ~strmatch(vars,'WAVE'),nvars)	;; do not append BAND or WAVE
+temp_vars = 'TEMP_'+vars[ivar]							;; create temporary variables
+for i = 0,nvars-1 do re = execute(temp_vars[i]+' = []')
 
 ;; loop over batched output files and append variables
 for i = 0,n_elements(fit_file)-1 do begin
 	restore, fit_file[i]
-	for j = 0,n_elements(vars)-1 do begin
-		re = execute('sz = size('+vars[j]+')')
-		if (sz[0] eq 2) then re = execute(temp_vars[j]+' = [['+temp_vars[j]+'],['+vars[j]+']]') else $
-		                     re = execute(temp_vars[j]+' = ['+temp_vars[j]+','+vars[j]+']')
+	for j = 0,nvars-1 do begin
+		;; match dimensions of output array
+		re = execute('sz = size('+vars[ivar[j]]+',/n_dimensions)')
+		case sz of
+			1: re = execute(temp_vars[j]+' = ['+temp_vars[j]+','+vars[ivar[j]]+']')
+			2: re = execute(temp_vars[j]+' = [['+temp_vars[j]+'],['+vars[ivar[j]]+']]')
+		endcase
 	endfor
 endfor
 ;; restore variables to original names
-for i = 0,n_elements(vars)-1 do re = execute(vars[i]+' = '+temp_vars[i])
+for i = 0,nvars-1 do re = execute(vars[ivar[i]]+' = '+temp_vars[i])
 ;; save concatenated SED modeling variables in top directory
 var_str = strjoin(vars,',')
 popd

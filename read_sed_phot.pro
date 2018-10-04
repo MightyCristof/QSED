@@ -15,6 +15,7 @@
 ;   /MASK			- Use mangle mask to remove sources in WISE near bright stars.
 ;   /NIR			- Only keep sources with at least 1 NIR detection.
 ;	/FORCED_SN		- Require all WISE forced photometry to have S/N≥1.
+;   /MIN_ERR        - Require a minimum error of ±0.05 mag (5% flux)
 ;	
 ; OUTPUTS:
 ;	obs				- Structure containing all data for SED modeling. Subject to change!
@@ -42,7 +43,8 @@
 PRO read_sed_phot, file, $
 	               MASK = mask, $
 	               NIR = nir, $
-	               FORCED_SN = forced_sn
+	               FORCED_SN = forced_sn, $
+	               MIN_ERR = min_err
 
 
 outfile = file
@@ -219,7 +221,7 @@ for f = 0,n_elements(file)-1 do begin
 		;re = execute('obs.raw_e_flux[i]='+e_flux_vars[i])
 	endfor
 	;; minimum photometric errors of ±0.05 mag (5% flux)
-	obs.e_flux = obs.e_flux > sqrt((-0.4d*(0.05*obs.flux*alog(10.)))^2)
+	if keyword_set(min_err) then obs.e_flux = obs.e_flux > sqrt((-0.4*alog(10)*obs.flux*0.05)^2)
 	
 	;; S/N > 3 for optical/NIR photometry
 	inotir = where(~strmatch(filt,'WISE*'))

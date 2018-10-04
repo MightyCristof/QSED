@@ -114,7 +114,8 @@ yra = ceil(minmax(flux[where(finite(flux),/NULL)]) + [-1.,1.])          ;; y-axi
 for i = 0,nobj-1 do begin
     ;; plot good photometry
     ig = where(bin[*,i],/null)
-    p = plot(restwav[ig,i],flux[ig,i],yr=yra,_extra=e,/NODATA)                                                      ;; set plotting window
+    if keyword_set(sav) then p = plot(restwav[ig,i],flux[ig,i],yr=yra,_extra=e,/NODATA,/BUFFER) else $  ;; set plotting window
+                             p = plot(restwav[ig,i],flux[ig,i],yr=yra,_extra=e,/NODATA)
     for t = 0,ntemps-1 do re = execute('p = plot(tempwav[*,i],'+temps[t]+'[*,i],col=col[t],/ov)')   ;; plot models
     p = plot(tempwav[*,i],model[*,i],/ov)                                                           ;; plot coadded models
     p = errorplot(restwav[ig,i],flux[ig,i],err[ig,i],'o',/SYM_FILLED,LINESTYLE='',/OV)              ;; plot data

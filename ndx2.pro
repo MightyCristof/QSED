@@ -18,7 +18,7 @@
 ;
 ; OUTPUTS:
 ;   chi				- Chi-square statistic.
-
+;
 ; OPTIONAL OUTPUTS:
 ;  
 ; COMMENTS:

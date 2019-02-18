@@ -36,11 +36,10 @@
 ;		MIR: WISE - 'wise', IRAC - 'irac', MIPS - 'mips', PACS - 'pacs'
 ;
 ;	Common E(B-V) arrays:
-; 		ebv = 10.^(dindgen(100)/40-1)-0.1d		;; 0 <= E(B-V) < 30	
-; 		ebv = 10.^(dindgen(120)/40-1)-0.1d		;; 0 <= E(B-v) < 95
-; 		ebv = 10.^(dindgen(100)/40-1)+0.9d		;; 1 <= E(B-V) < 30		
-; 		ebv = 10.^(dindgen(100)/50-1)+0.9d		;; 1 <= E(B-V) < 10
-; 		ebv = 10.^(dindgen(120)/40-1)+0.9d		;; 1 <= E(B-V) < 95	
+; 		ebv = 10.^(dindgen(45)/20-1)-0.1d		;; 0 <= E(B-V) <= 15	
+; 		ebv = 10.^(dindgen(50)/20-1)-0.1d		;; 0 <= E(B-V) < 30	
+;       ebv = 10.^(dindgen(55)/20-1)-0.1d       ;; 0 <= E(B-V) <= 50
+; 		ebv = 10.^(dindgen(60)/20-1)-0.1d		;; 0 <= E(B-v) < 90
 ;
 ;	Common redshift arrays:
 ;		z = dindgen(8000)/1000.					;; 0.000 < z < 7.999

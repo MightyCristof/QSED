@@ -82,16 +82,16 @@ for f = 0,n_elements(file)-1 do begin
     ;; photometry variables (mag, e_mag, flux, e_flux)
     filt = ['SDSS1','SDSS2','SDSS3','SDSS4','SDSS5', $
             'WISE1','WISE2','WISE3','WISE4', $
-            'UK1','UK2','UK3','UK4' $
-            ]
+            'UK1','UK2','UK3','UK4', $
+            'GALEX1','GALEX2']
     mag_vars = ['DERED_U','DERED_G','DERED_R','DERED_I','DERED_Z', $
                 'W1','W2','W3','W4', $
-                'YPETROMAG','J_1PETROMAG','HPETROMAG','KPETROMAG' $
-                ]
+                'YPETROMAG','J_1PETROMAG','HPETROMAG','KPETROMAG', $
+                'FUV_MAG','NUV_MAG']
     e_mag_vars = ['MODELMAGERR_u','MODELMAGERR_g','MODELMAGERR_r','MODELMAGERR_i','MODELMAGERR_z', $
                   'W1ERR','W2ERR','W3ERR','W4ERR', $
-                  'YPETROMAGERR','J_1PETROMAGERR','HPETROMAGERR','KPETROMAGERR' $
-                  ]
+                  'YPETROMAGERR','J_1PETROMAGERR','HPETROMAGERR','KPETROMAGERR', $
+                  'FUV_MAGERR','NUV_MAGERR']
     flux_vars = mag_vars+'_FLUX'
     e_flux_vars = e_mag_vars+'_FLUX'
     nfilts = n_elements(filt)
@@ -106,7 +106,7 @@ for f = 0,n_elements(file)-1 do begin
     ;; conversions needed for nanomaggies & Vega2AB flux conversions
     ;; XDQSOz and unWISE in nanomaggies
     ;; XDQSOz and WISE photometry zero pt also in Vega
-    nmgy2mujy = 3.631												;; 1 nMgy = 3.631x10^-6 Jy
+    nmgy2mujy = 3.631												;; 1 nMgy = 3.631 uJy
     v2ab_flux = 10.^([-2.699d,-3.339d,-5.174d,-6.620d]/2.5)			;; Vega2AB flux
 
     if (xdqsolen gt 0.) then begin
@@ -223,7 +223,7 @@ for f = 0,n_elements(file)-1 do begin
     ;; minimum photometric errors of ±0.05 mag (5% flux)
     if keyword_set(min_err) then obs.e_flux = obs.e_flux > sqrt((-0.4*alog(10)*obs.flux*0.05)^2)
     
-    ;; S/N > 3 for optical/NIR photometry
+    ;; S/N > 3 for UV/optical/NIR photometry
     inotir = where(~strmatch(filt,'WISE*'))
     flux = obs.flux[inotir]
     e_flux = obs.e_flux[inotir]

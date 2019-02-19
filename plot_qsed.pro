@@ -110,7 +110,7 @@ chi = strtrim(string(chi[0,*],format='(d0.2)'),2)+'/'+strtrim(string(chi[1,*],fo
 ;; plot SEDs
 e = {xr:[0.05,30.], xlog:1, $
      xtitle:'$Rest wavelength [ \mum ]$', ytitle:'$log( \nu \itF\rm_\nu  /  [ erg s^{-1} cm^{-2} ] )$'}
-yra = ceil(minmax(flux[where(finite(flux),/NULL)]) + [-1.,1.])          ;; y-axis range
+yra = ceil(minmax(flux[where(finite(flux),/NULL)]) + [-2.,1.])          ;; y-axis range
 for i = 0,nobj-1 do begin
     ;; plot good photometry
     ig = where(bin[*,i],/null)

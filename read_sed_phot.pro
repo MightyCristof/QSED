@@ -133,7 +133,8 @@ for f = 0,n_elements(file)-1 do begin
             xdf[ineg] = pos_val
         endif
         ;; convert WISE to AB 
-        iwise = where(strmatch(xdb,'WISE*'))
+        iwise = where(strmatch(xdb,'WISE*'),ct)
+        if (ct eq 0) then stop
         v2ab = rebin(v2ab_flux[0:1],2,n_elements(xdf[0,*]))
         xdf[iwise,*] *= v2ab
         xde[iwise,*] *= v2ab
@@ -149,7 +150,8 @@ for f = 0,n_elements(file)-1 do begin
     endif
     
     ;; add unWISE flux and calculate magnitudes
-    unwb = filt[where(strmatch(filt,'WISE*'))]					;; unWISE band
+    unwb = filt[where(strmatch(filt,'WISE*'),ct)]			;; unWISE band
+    if (ct eq 0) then stop
     unwf = ['w1','w2','w3','w4']+'_nanomaggies'					;; unWISE flux
     e_unwf = unwf + '_ivar'										;; unWISE inverse variance
     unw = unwf+'_mag'											;; unWISE mags
@@ -224,19 +226,20 @@ for f = 0,n_elements(file)-1 do begin
     if keyword_set(min_err) then obs.e_flux = obs.e_flux > sqrt((-0.4*alog(10)*obs.flux*0.05)^2)
     
     ;; S/N > 3 for UV/optical/NIR photometry
-    inotir = where(~strmatch(filt,'WISE*'))
+    inotir = where(~strmatch(filt,'WISE*'),ct)
+    if (ct eq 0) then stop
     flux = obs.flux[inotir]
     e_flux = obs.e_flux[inotir]
     mag = obs.mag[inotir]
     e_mag = obs.e_mag[inotir]
     sn = flux/e_flux
-    isn = where(~finite(sn) or sn lt 3.,snct)
+    isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
     ;; remove observations that fail S/N cut
-    if (snct ne 0) then begin
-        flux[isn] = 0.
-        e_flux[isn] = 0.
-        mag[isn] = -9999.
-        e_mag[isn] = -9999.
+    if (nbad gt 0) then begin
+        flux[badsn] = 0.
+        e_flux[badsn] = 0.
+        mag[badsn] = -9999.
+        e_mag[badsn] = -9999.
     endif
     obs.flux[inotir] = flux
     obs.e_flux[inotir] = e_flux
@@ -245,19 +248,20 @@ for f = 0,n_elements(file)-1 do begin
     
     ;; S/N > 1 for forced photometry, otherwise trust it
     if keyword_set(forced_sn) then begin
-        iir = where(strmatch(filt,'WISE*'))
+        iir = where(strmatch(filt,'WISE*'),ct)
+        if (ct eq 0) then stop
         flux = obs.flux[iir]
         e_flux = obs.e_flux[iir]
         mag = obs.mag[iir]
         e_mag = obs.e_mag[iir]
         sn = flux/e_flux
-        isn = where(~finite(sn) or sn lt 1.,snct)
+        isn = where(finite(sn) and sn ge 1.,complement=badsn,ncomplement=nbad)
         ;; remove observations that fail S/N cut
-        if (snct ne 0) then begin
-            flux[isn] = 0.
-            e_flux[isn] = 0.
-            mag[isn] = -9999.
-            e_mag[isn] = -9999.
+        if (nbad gt 0) then begin
+            flux[badsn] = 0.
+            e_flux[badsn] = 0.
+            mag[badsn] = -9999.
+            e_mag[badsn] = -9999.
         endif
         obs.flux[iir] = flux
         obs.e_flux[iir] = e_flux
@@ -279,9 +283,9 @@ for f = 0,n_elements(file)-1 do begin
     e_zarr = strarr(ndata)			;; all redshift error data
     z = dblarr(ndata)				;; "best" redshift value
     e_z = dblarr(ndata)				;; "best" redshift error value
-    ;; trust SDSS photometric redshifts only when photoerrorclass == 1
-    iphotz = where(data.clean eq 1,complement=inphotz,ncomplement=nphotz)
-    if (nphotz gt 0) then data[inphotz].zp = -9999.
+    ;; trust SDSS photometric redshifts only where reliable; -1 <= photoerrorclass <= 3 (photoerrorclass == 1 is best match)
+    iphotz = where(data.photoerrorclass ge -1 and data.photoerrorclass lt 3,complement=badz,ncomplement=nbadz)
+    if (nbadz gt 0) then data[badz].zp = -9999.
     ;; sort redshift data
     for i = 0,n_elements(zstr)-1 do begin
         re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0.,zlen)')
@@ -307,7 +311,7 @@ for f = 0,n_elements(file)-1 do begin
     
     ;; ..have clean photometry
     ;; NOTE: After this step OBS and DATA are no longer the same length!
-    ikeep = where(data.clean,ct)
+    ikeep = where(data.clean eq 1,ct)
     if (ct eq 0) then continue
     obs = obs[ikeep]
     		

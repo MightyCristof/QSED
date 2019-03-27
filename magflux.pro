@@ -143,6 +143,7 @@ case strupcase(band) of
     'SPIRE1': f0 = 0.06
     'SPIRE2': f0 = 0.03
     'SPIRE3': f0 = 0.01
+    else: print, 'ASSUMING AB PHOTOMETRY'    
 endcase
 
 ;; flux2mag

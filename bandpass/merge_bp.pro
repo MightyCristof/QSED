@@ -31,18 +31,21 @@
 ;		% Compiled module: STRNUMBER.
 ;	IDL> help, bp
 ;		** Structure <1a53e08>, 11 tags, length=289216, data length=289216, refs=1:
-;   	FLMX            STRUCT    -> <Anonymous> Array[1]
-;  		GALEX           STRUCT    -> <Anonymous> Array[1]
-;  		HSC             STRUCT    -> <Anonymous> Array[1]
-;  		IRAC            STRUCT    -> <Anonymous> Array[1]
-;  		MIPS            STRUCT    -> <Anonymous> Array[1]
-;  		PACS            STRUCT    -> <Anonymous> Array[1]
 ;  		SDSS            STRUCT    -> <Anonymous> Array[1]
-;  		SPIRE           STRUCT    -> <Anonymous> Array[1]
-;  		TWOM            STRUCT    -> <Anonymous> Array[1]
 ;  		UK              STRUCT    -> <Anonymous> Array[1]
-;  		WISE            STRUCT    -> <Anonymous> Array[1]
-;   
+;  		WISE            STRUCT    -> <Anonymous> Array[1]  
+;   IDL> help, bp.sdss
+;       ** Structure <1649298>, 5 tags, length=7056, data length=7056, refs=2:
+;       FILT1           STRUCT    -> <Anonymous> Array[47]
+;       FILT2           STRUCT    -> <Anonymous> Array[89]
+;       FILT3           STRUCT    -> <Anonymous> Array[75]
+;       FILT4           STRUCT    -> <Anonymous> Array[89]
+;       FILT5           STRUCT    -> <Anonymous> Array[141]
+;   IDL> help, bp.sdss.filt1,/st
+;       ** Structure <21160e8>, 2 tags, length=16, data length=16, refs=6:
+;       WAV             DOUBLE          0.29800000
+;       THRU            DOUBLE           0.0000000
+;
 ; PROCEDURES CALLED:
 ;	CREATE_BP.PRO
 ;

@@ -36,14 +36,14 @@
 ;		MIR: WISE - 'wise', IRAC - 'irac', MIPS - 'mips', PACS - 'pacs'
 ;
 ;	Common E(B-V) arrays:
-; 		ebv = 10.^(dindgen(45)/20-1)-0.1d		;; 0 <= E(B-V) <= 15	
-; 		ebv = 10.^(dindgen(50)/20-1)-0.1d		;; 0 <= E(B-V) < 30	
-;       ebv = 10.^(dindgen(55)/20-1)-0.1d       ;; 0 <= E(B-V) <= 50
-; 		ebv = 10.^(dindgen(60)/20-1)-0.1d		;; 0 <= E(B-v) < 90
+; 		0 <= E(B-V) <= 15           10.^(dindgen(45)/20-1)-0.1d
+; 		0 <= E(B-V) < 30	        10.^(dindgen(50)/20-1)-0.1d
+;       0 <= E(B-V) <= 50           10.^(dindgen(55)/20-1)-0.1d
+; 		0 <= E(B-v) < 90            10.^(dindgen(60)/20-1)-0.1d
 ;
 ;	Common redshift arrays:
-;		z = dindgen(8000)/1000.					;; 0.000 < z < 7.999
-;       z = dindgen(2000)/1000.					;; 0.000 < z < 1.999
+;		0.000 < z < 7.999           dindgen(8000)/1000.
+;       0.000 < z < 1.999           dindgen(2000)/1000.
 ;
 ; EXAMPLES:
 ;	load_comp,'comp_temp4.sav',/push

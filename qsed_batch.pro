@@ -44,7 +44,7 @@ file_mkdir, fit_dir
 pushd, fit_dir
 
 ;; load template grid variables
-load_gt,'galtemp_sed4.sav',/push
+load_gt,'galtemp_*.sav',/push
 
 ;; directory for all batched output files
 file_mkdir, 'batch_output'

@@ -42,11 +42,14 @@ print, 'Version 1.0'
 print, ' '
 
 
+rj_tail = 1
 ;; input data files
 temp_dir = '~/Research/sed_models/raw_templates/'
 a10 = 'assef+10/lrt_templates.dat'
 ext = 'assef+10/ext_law_data.dat'
+;k15 = 'kirkpatrick+15/Comprehensive_library/SFG1.txt'
 k15 = 'kirkpatrick+15/Comprehensive_library/SFG2.txt'
+;k15 = 'kirkpatrick+15/Comprehensive_library/SFG3.txt'
 
 ;; read A10 templates
 readcol,temp_dir+a10,wav,agn,agn2,ell,sbc,irr,format='d,d,d,d,d,d',/silent
@@ -73,17 +76,26 @@ lum *= 1e7                              ;; Watt to cgs
 dlnu *= 1e7
 dl = (10.*!const.parsec) * 100.			;; A10 templates are normalized to 10 pc; convert
 fnu = lum/(4.*!const.pi*dl^2)           ;; to centimeters and use same value for K15
-;; match and normalize to A10 SBc
-ikirk = 232;0
-loc = value_locate(wav,kirkwav[ikirk])		;; index of wav where kirkwav begins
-normal = sbc[loc]/fnu[ikirk]				;; flux conversion factor
-fnu *= normal							;; fnu normalized to A10 at wav[loc]
 
-;; interpolate fnu to A10 wavelengths from loc to end of wav array
-sfg = spline(kirkwav,fnu,wav[loc+1:-1])	
-;; stitch SBc[0:loc] and SFG[loc:-1]
-;; SFG is now A10 until the beginning of the SFG template and spans A10 wavelength
-sfg = [sbc[0:loc],sfg]					
+;; match and normalize to A10 SBc
+if keyword_set(rj_tail) then begin
+    ;; match at 2-micron
+    loc = value_locate(wav,2.)                  ;; index of A10 wav where K15 begins
+    normal = sbc[loc+1]/fnu[0]                  ;; normalization of K15 template
+    ;; interpolate fnu to end of A10 wav array
+    sfg = spline(kirkwav,fnu*normal,wav[loc+1:-1])
+    ;; SFG is now A10 until the beginning of the SFG template and spans A10 wavelength
+    sfg = [sbc[0:loc],sfg]
+endif else begin
+    ;; match at 6-micron
+    iassef = 229
+    loc = value_locate(kirkwav,wav[iassef])		;; index of A10 wav to stitch K15 template
+    normal = sbc[iassef]/fnu[loc]				;; normalization of K15 template
+    ;; interpolate fnu to end of A10 wav array
+    sfg = spline(kirkwav,fnu*normal,wav[iassef+1:-1])	
+    ;; SFG is now A10 until the beginning of the SFG template and spans A10 wavelength
+    sfg = [sbc[0:iassef],sfg]					
+endelse
 
 ;; create template components structure
 comp = {wav: 0d, $

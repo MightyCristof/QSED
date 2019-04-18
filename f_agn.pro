@@ -53,8 +53,8 @@ FUNCTION f_agn, w0, $
 ;; load template components variables
 common _comp
 
-;; all possible templates (max=5)
-temps = ['AGN','ELL','SFG','IRR','DUST']
+;; all possible templates (SED modeling procedure can handle max=5 templates)
+temps = ['AGN','AGN2','ELL','SBC','SFG','IRR','DST']   
 ;; match input components
 ;; NOTE: use MATCH2 to keep named order of temps (MATCH alphabetizes)
 ;; this is extremely important for plotting purposes!			
@@ -70,7 +70,7 @@ for i = 0,n_elements(coeffs)-1 do re = execute(coeffs[i]+' = reform(fits[i+2,*])
 
 wav = comp.wav
 ;; interpolate template components to desired wavelength
-for i = 0,n_elements(temps)-1 do re = execute(temps[i]+' = interpol(comp.'+temps[i]+',wav,w0)')
+for i = 0,n_elements(temps)-1 do re = execute(temps[i]+' = interpol(comp.'+temps[i]+'*1e-29,wav,w0)*!const.c/(w0*1e-6)')
 kap = interpol(comp.kap,wav,w0)
 
 ;; compute AGN model contribution

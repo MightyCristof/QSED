@@ -43,6 +43,7 @@
 PRO read_sed_phot, file, $
 	               MASK = mask, $
                    NIR = nir, $
+                   FORCED_PHOT = forced_phot, $
                    FORCED_SN = forced_sn, $
                    MIN_ERR = min_err
 
@@ -71,9 +72,11 @@ for f = 0,n_elements(file)-1 do begin
     endif
 
     ;; keep only sources with unWISE data
-    iunwise = where(data.ra_unwise ne -9999. and data.dec_unwise ne -9999.,unwiselen)
-    if (unwiselen eq 0) then continue
-    data = data[iunwise]
+    if keyword_set(forced_phot) then begin
+        iunwise = where(data.ra_unwise ne -9999. and data.dec_unwise ne -9999.,unwiselen)
+        if (unwiselen eq 0) then continue
+        data = data[iunwise]
+    endif
     ;; SDSS and XDQSOz indices
     iisdss = data.ra_sdss ne -9999. and data.dec_sdss ne -9999.
     isdss = where(iisdss,sdsslen)
@@ -150,44 +153,45 @@ for f = 0,n_elements(file)-1 do begin
     endif
     
     ;; add unWISE flux and calculate magnitudes
-    unwb = filt[where(strmatch(filt,'WISE*'),ct)]			;; unWISE band
-    if (ct eq 0) then stop
-    unwf = ['w1','w2','w3','w4']+'_nanomaggies'					;; unWISE flux
-    e_unwf = unwf + '_ivar'										;; unWISE inverse variance
-    unw = unwf+'_mag'											;; unWISE mags
-    e_unw = e_unwf+'_mag'										;; unWISE mag errors    
+    if keyword_set(forced_phot) then begin
+        unwb = filt[where(strmatch(filt,'WISE*'),ct)]			;; unWISE band
+        if (ct eq 0) then stop
+        unwf = ['w1','w2','w3','w4']+'_nanomaggies'					;; unWISE flux
+        e_unwf = unwf + '_ivar'										;; unWISE inverse variance
+        unw = unwf+'_mag'											;; unWISE mags
+        e_unw = e_unwf+'_mag'										;; unWISE mag errors    
     
-    for i = 0,n_elements(unwb)-1 do begin
-        ;; convert from nanomaggies to microjansky, from Vega to AB
-        re = execute(unwf[i]+'= nmgy2mujy * v2ab_flux[i] * data.'+unwf[i])
-        re = execute(e_unwf[i]+'= nmgy2mujy * v2ab_flux[i] * 1./sqrt(data.'+e_unwf[i]+')')
-        ;; remove -9999 detections
-        re = execute('inin = where(data.'+unwf[i]+' eq -9999. or data.'+e_unwf[i]+' eq -9999.,ninct)')
-        if (ninct ne 0) then re = execute(unwf[i]+'[inin] = 0. & '+e_unwf[i]+'[inin] = 0.')
-        ;; remove non-finite values
-        re = execute('ifin = where(~finite('+unwf[i]+') or ~finite('+e_unwf[i]+'),finct)')
-        if (finct ne 0) then re = execute(unwf[i]+'[ifin] = 0. & '+e_unwf[i]+'[ifin] = 0.')
-        ;; indices of negative fluxes
-        re = execute('ineg = where('+unwf[i]+' lt 0.,negct)')
-        if (negct ne 0) then begin
-            ;; where flux+error > 0, set flux = (flux+error) / 2 
-            re = execute('pos_val = (('+unwf[i]+'[ineg] + '+e_unwf[i]+'[ineg])>0.)/2.')
-            re = execute(unwf[i]+'[ineg] = pos_val')
-        endif
-        ;; compute unWISE mags and errors
-        re = execute(unw[i]+' = magflux('+unwf[i]+','+e_unwf[i]+',unwb[i],err='+e_unw[i]+',/flux_in)')
-    endfor		
+        for i = 0,n_elements(unwb)-1 do begin
+            ;; convert from nanomaggies to microjansky, from Vega to AB
+            re = execute(unwf[i]+'= nmgy2mujy * v2ab_flux[i] * data.'+unwf[i])
+            re = execute(e_unwf[i]+'= nmgy2mujy * v2ab_flux[i] * 1./sqrt(data.'+e_unwf[i]+')')
+            ;; remove -9999 detections
+            re = execute('inin = where(data.'+unwf[i]+' eq -9999. or data.'+e_unwf[i]+' eq -9999.,ninct)')
+            if (ninct ne 0) then re = execute(unwf[i]+'[inin] = 0. & '+e_unwf[i]+'[inin] = 0.')
+            ;; remove non-finite values
+            re = execute('ifin = where(~finite('+unwf[i]+') or ~finite('+e_unwf[i]+'),finct)')
+            if (finct ne 0) then re = execute(unwf[i]+'[ifin] = 0. & '+e_unwf[i]+'[ifin] = 0.')
+            ;; indices of negative fluxes
+            re = execute('ineg = where('+unwf[i]+' lt 0.,negct)')
+            if (negct ne 0) then begin
+                ;; where flux+error > 0, set flux = (flux+error) / 2 
+                re = execute('pos_val = (('+unwf[i]+'[ineg] + '+e_unwf[i]+'[ineg])>0.)/2.')
+                re = execute(unwf[i]+'[ineg] = pos_val')
+            endif
+            ;; compute unWISE mags and errors
+            re = execute(unw[i]+' = magflux('+unwf[i]+','+e_unwf[i]+',unwb[i],err='+e_unw[i]+',/flux_in)')
+        endfor		
     
-    ;; add unWISE photometry to full photometry
-    for i = 0,n_elements(unwb)-1 do begin
-    iw = where(strmatch(filt,unwb[i]),wct)				;; match unWISE band
-        if (wct eq 0) then stop
-        re = execute(mag_vars[iw[0]]+' = '+unw[i])
-        re = execute(e_mag_vars[iw[0]]+' = '+e_unw[i])
-        re = execute(flux_vars[iw[0]]+' = '+unwf[i])
-        re = execute(e_flux_vars[iw[0]]+' = '+e_unwf[i])
-    endfor
-    
+        ;; add unWISE photometry to full photometry
+        for i = 0,n_elements(unwb)-1 do begin
+        iw = where(strmatch(filt,unwb[i]),wct)				;; match unWISE band
+            if (wct eq 0) then stop
+            re = execute(mag_vars[iw[0]]+' = '+unw[i])
+            re = execute(e_mag_vars[iw[0]]+' = '+e_unw[i])
+            re = execute(flux_vars[iw[0]]+' = '+unwf[i])
+            re = execute(e_flux_vars[iw[0]]+' = '+e_unwf[i])
+        endfor
+    endif
     ;; output data structure	
     ndata = n_elements(data)
     obs = {objid: long64(0), $
@@ -211,7 +215,7 @@ for f = 0,n_elements(file)-1 do begin
     
     ;; source data fill
     obs[isdss].objid = data[isdss].objid
-    obs[ixdqso].objid = long64(strtrim(data[ixdqso].objid_xdqso,2))
+    if (xdqsolen gt 0.) then obs[ixdqso].objid = long64(strtrim(data[ixdqso].objid_xdqso,2))
     obs.ra = data.ra
     obs.dec = data.dec
     
@@ -225,37 +229,16 @@ for f = 0,n_elements(file)-1 do begin
     ;; minimum photometric errors of ±0.05 mag (5% flux)
     if keyword_set(min_err) then obs.e_flux = obs.e_flux > sqrt((-0.4*alog(10)*obs.flux*0.05)^2)
     
-    ;; S/N > 3 for UV/optical/NIR photometry
-    inotir = where(~strmatch(filt,'WISE*'),ct)
-    if (ct eq 0) then stop
-    flux = obs.flux[inotir]
-    e_flux = obs.e_flux[inotir]
-    mag = obs.mag[inotir]
-    e_mag = obs.e_mag[inotir]
-    sn = flux/e_flux
-    isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
-    ;; remove observations that fail S/N cut
-    if (nbad gt 0) then begin
-        flux[badsn] = 0.
-        e_flux[badsn] = 0.
-        mag[badsn] = -9999.
-        e_mag[badsn] = -9999.
-    endif
-    obs.flux[inotir] = flux
-    obs.e_flux[inotir] = e_flux
-    obs.mag[inotir] = mag
-    obs.e_mag[inotir] = e_mag
-    
-    ;; S/N > 1 for forced photometry, otherwise trust it
-    if keyword_set(forced_sn) then begin
-        iir = where(strmatch(filt,'WISE*'),ct)
+    if keyword_set(forced_phot) then begin
+        ;; S/N > 3 for UV/optical/NIR photometry
+        inotir = where(~strmatch(filt,'WISE*'),ct)
         if (ct eq 0) then stop
-        flux = obs.flux[iir]
-        e_flux = obs.e_flux[iir]
-        mag = obs.mag[iir]
-        e_mag = obs.e_mag[iir]
+        flux = obs.flux[inotir]
+        e_flux = obs.e_flux[inotir]
+        mag = obs.mag[inotir]
+        e_mag = obs.e_mag[inotir]
         sn = flux/e_flux
-        isn = where(finite(sn) and sn ge 1.,complement=badsn,ncomplement=nbad)
+        isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
         ;; remove observations that fail S/N cut
         if (nbad gt 0) then begin
             flux[badsn] = 0.
@@ -263,12 +246,54 @@ for f = 0,n_elements(file)-1 do begin
             mag[badsn] = -9999.
             e_mag[badsn] = -9999.
         endif
-        obs.flux[iir] = flux
-        obs.e_flux[iir] = e_flux
-        obs.mag[iir] = mag
-        obs.e_mag[iir] = e_mag
-    endif
+        obs.flux[inotir] = flux
+        obs.e_flux[inotir] = e_flux
+        obs.mag[inotir] = mag
+        obs.e_mag[inotir] = e_mag
     
+        ;; S/N > 1 for forced photometry, otherwise trust it
+        if keyword_set(forced_sn) then begin
+            iir = where(strmatch(filt,'WISE*'),ct)
+            if (ct eq 0) then stop
+            flux = obs.flux[iir]
+            e_flux = obs.e_flux[iir]
+            mag = obs.mag[iir]
+            e_mag = obs.e_mag[iir]
+            sn = flux/e_flux
+            isn = where(finite(sn) and sn ge 1.,complement=badsn,ncomplement=nbad)
+            ;; remove observations that fail S/N cut
+            if (nbad gt 0) then begin
+                flux[badsn] = 0.
+                e_flux[badsn] = 0.
+                mag[badsn] = -9999.
+                e_mag[badsn] = -9999.
+            endif
+            obs.flux[iir] = flux
+            obs.e_flux[iir] = e_flux
+            obs.mag[iir] = mag
+            obs.e_mag[iir] = e_mag
+        endif
+    endif else BEGIN
+        ;; S/N > 3 for all photometry
+        flux = obs.flux
+        e_flux = obs.e_flux
+        mag = obs.mag
+        e_mag = obs.e_mag
+        sn = flux/e_flux
+        isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
+        ;; remove observations that fail S/N cut
+        if (nbad gt 0) then begin
+            flux[badsn] = 0.
+            e_flux[badsn] = 0.
+            mag[badsn] = -9999.
+            e_mag[badsn] = -9999.
+        endif
+        obs.flux = flux
+        obs.e_flux = e_flux
+        obs.mag = mag
+        obs.e_mag = e_mag
+
+    endelse
     ;; byte index for good photometry
     obs.bin = obs.flux gt 0. and obs.e_flux gt 0.				
     
@@ -324,7 +349,7 @@ for f = 0,n_elements(file)-1 do begin
     ikeep = where(total(obs.bin,1) ge 7,ct)
     if (ct eq 0) then continue 
     obs = obs[ikeep]
-    	
+        
     ;; ...aren't in the mask
     if keyword_set(mask) then begin
         euler,obs.ra,obs.dec,gal_l,gal_b,1
@@ -346,7 +371,8 @@ for f = 0,n_elements(file)-1 do begin
     ;; finally, no duplicate objects in data set!
     if (n_elements(uniq(obs.objid,sort(obs.objid))) ne n_elements(obs)) then begin
         print, 'DUPLICATE SOURCE DETECTED!'
-        stop
+        ikeep = rem_dup(obs.objid)
+        obs = obs[ikeep]
     endif
     
     band = filt
@@ -355,10 +381,6 @@ endfor
 
 
 END
-
-
-
-
 
 
 

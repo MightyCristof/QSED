@@ -87,10 +87,11 @@ objnu = !const.c/(restwav * 1e-6)
 tempwav = rebin(comp.wav,n_elements(comp),nobj)
 tempnu = !const.c/(tempwav * 1e-6)
 	
-;; covert from flux density [microjansky] to flux [erg/s/cm2]
+;; covert data from flux density [microjansky] to flux [erg/s/cm2]
 err *= 1e-29 * objnu         
 flux *= 1e-29 * objnu
 ;; reconstruct models
+;; convert models from flux density [microjansky] to flux [erg/s/cm2]
 agn = 1e-29 * tempnu * (coeff[0,*]##comp.(where(strmatch(tag_names(comp),'AGN*')))) * 10.^(-0.4 * comp.kap # ebv)                         ;; AGN model
 for i = 1,ntemps-1 do re = execute(temps[i]+' = 1e-29 * tempnu * (coeff[i,*]##comp.'+temps[i]+')')  ;; galaxy models
 re = execute('model = '+strjoin(temps,"+"))                                                         ;; coadded models

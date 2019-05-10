@@ -68,9 +68,10 @@ z = reform(fits[1,*])
 coeffs = 'c_'+temps
 for i = 0,n_elements(coeffs)-1 do re = execute(coeffs[i]+' = reform(fits[i+2,*])')
 
-wav = comp.wav
 ;; interpolate template components to desired wavelength
-for i = 0,n_elements(temps)-1 do re = execute(temps[i]+' = interpol(comp.'+temps[i]+'*1e-29,wav,w0)*!const.c/(w0*1e-6)')
+wav = comp.wav
+nu = (!const.c*1e6)/wav
+for i = 0,n_elements(temps)-1 do re = execute(temps[i]+' = interpol(1e-29*nu*comp.'+temps[i]+',wav,w0)/(1+z)')
 kap = interpol(comp.kap,wav,w0)
 
 ;; compute AGN model contribution

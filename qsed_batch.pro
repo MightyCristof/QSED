@@ -31,6 +31,10 @@
 PRO qsed_batch, files
 
 
+;; load template grid variables
+load_gt,'galtemp_*.sav'
+;load_gt,'galtemp_*.sav',/push
+
 ;; create runtime directory
 fs = '(I2.2)'
 caldat, julday(), mon, d, y, h, m
@@ -42,9 +46,6 @@ fit_str = string(y, format='(I4.2)') + $
 fit_dir = 'run_' + fit_str
 file_mkdir, fit_dir
 pushd, fit_dir
-
-;; load template grid variables
-load_gt,'galtemp_*.sav',/push
 
 ;; directory for all batched output files
 file_mkdir, 'batch_output'

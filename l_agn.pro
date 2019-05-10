@@ -83,12 +83,12 @@ ext = 10.^(-0.4*kap0*ebv)
 ;; attenuate Fnu [erg/s/cm2/Hz]
 fnu0 *= ext
 
-;; frequency at w0
-nu0 = (!const.c*1e6)/w0
+;; frequency at w0 rest-frame, SED fit in observed frame -> nu_obs = nu_emit/(1+z)
+nu0 = (!const.c*1e6)/w0/(1.+redshift)
 
 ;; calculate flux
-f0 = fnu0 * nu0
-
+nufnu0 = fnu0 * nu0
+print, nufnu0[0]
 ;; luminosity distance in cgs
 testz = 10.^(dindgen(150)/100.)-(1.-min(z)>0.)          ;; range of z values to calculate dL
 dl = lumdist(testz,h0=70.,omega_m=0.3,lambda0=0.7)      ;; luminosity distance in Mpc; dL = (1+z)c ºdz/H(z)
@@ -96,7 +96,7 @@ dl = interpol(dl,testz,z)                               ;; interpolation to inpu
 dl2 = (dl * 1e6 * !const.parsec * 1e2)^2                ;; luminosity distance converted from Mpc to cm
 
 ;; luminosity L in cgs (ergs/s)
-lum = 4.*!const.pi*dl2*f0
+lum = 4.*!const.pi*dl2*nufnu0
 
 ;; return in log space
 if keyword_set(log) then lum = alog10(lum) > 0.

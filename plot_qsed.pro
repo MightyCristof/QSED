@@ -43,7 +43,8 @@ PRO plot_qsed, obswav, $
                in_fits, $
                TEMP = temp, $
                IND = ind, $
-               SAV = sav       
+               SAV = sav, $
+               RESTFRAME = restframe      
 
 
 ;; silence math errors
@@ -81,12 +82,21 @@ z = fits[1,*]
 coeff = fits[2:2+ntemps-1,*]
 chi = fits[-2:-1,*]
 
-;; calculate rest wavelength and frequency for sources and templates
-restwav = obswav#(1+z)^(-1)
-objnu = !const.c/(restwav * 1e-6)
-tempwav = rebin(comp.wav,n_elements(comp),nobj)
-tempnu = !const.c/(tempwav * 1e-6)
-	
+;; calculate wavelength and frequency for sources and templates
+if keyword_set(restframe) then begin
+    objwav = obswav#(1+z)^(-1)
+    objnu = (!const.c*1e6)/objwav#(1.+z)^(-1)
+    tempwav = rebin(comp.wav,n_elements(comp),nobj)
+    tempnu = (!const.c*1e6)/tempwav#(1.+z)^(-1)
+    xtitle = '$Rest wavelength [ \mum ]$'
+endif else begin
+    objwav = rebin(obswav,n_elements(obswav),nobj)
+    objnu = (!const.c*1e6)/objwav
+    tempwav = comp.wav#reform(1+z)
+    tempnu = (!const.c*1e6)/tempwav
+    xtitle = '$Observed wavelength [ \mum ]$'
+endelse
+
 ;; covert data from flux density [microjansky] to flux [erg/s/cm2]
 err *= 1e-29 * objnu         
 flux *= 1e-29 * objnu
@@ -101,7 +111,7 @@ err = abs((err)/(flux*alog(10)))
 flux = alog10(flux)
 for i = 0,ntemps-1 do re = execute(temps[i]+' = alog10('+temps[i]+')')
 model = alog10(model)
-
+;print, agn[value_locate(tempwav[*,0],6.),0]
 ;; string variables for call to TEXT()
 z = strtrim(string(z,format='(d5.3)'),2)
 ebv = strtrim(string(ebv,format='(d5.2)'),2)
@@ -109,17 +119,17 @@ coeff = reform(strtrim(string(coeff,format='(e10.3)'),2),ntemps,nobj)
 chi = strtrim(string(chi[0,*],format='(d0.2)'),2)+'/'+strtrim(string(chi[1,*],format='(i)'),2)
 
 ;; plot SEDs
-e = {xr:[0.05,30.], xlog:1, $
-     xtitle:'$Rest wavelength [ \mum ]$', ytitle:'$log( \nu \itF\rm_\nu  /  [ erg s^{-1} cm^{-2} ] )$'}
-yra = ceil(minmax(flux[where(finite(flux),/NULL)]) + [-2.,1.])          ;; y-axis range
+e = {xr:[0.05,30.],yra:[floor(min(flux[where(finite(flux))]))-1.5,ceil(max(flux[where(finite(flux))]))+2.],xlog:1, $
+     xtitle:xtitle, ytitle:'$log( \nu \itF\rm_\nu  /  [ erg s^{-1} cm^{-2} ] )$', $
+     nodata:1}
 for i = 0,nobj-1 do begin
     ;; plot good photometry
     ig = where(bin[*,i],/null)
-    if keyword_set(sav) then p = plot(restwav[ig,i],flux[ig,i],yr=yra,_extra=e,/NODATA,/BUFFER) else $  ;; set plotting window
-                             p = plot(restwav[ig,i],flux[ig,i],yr=yra,_extra=e,/NODATA)
+    if keyword_set(sav) then p = plot(objwav[ig,i],flux[ig,i],_extra=e,/BUFFER) else $              ;; set plotting window
+                             p = plot(objwav[ig,i],flux[ig,i],_extra=e)
     for t = 0,ntemps-1 do re = execute('p = plot(tempwav[*,i],'+temps[t]+'[*,i],col=col[t],/ov)')   ;; plot models
     p = plot(tempwav[*,i],model[*,i],/ov)                                                           ;; plot coadded models
-    p = errorplot(restwav[ig,i],flux[ig,i],err[ig,i],'o',/SYM_FILLED,LINESTYLE='',/OV)              ;; plot data
+    p = errorplot(objwav[ig,i],flux[ig,i],err[ig,i],'o',/SYM_FILLED,LINESTYLE='',/OV)               ;; plot photometry
     ;; Model parameters
     !NULL = text(0.18,0.80,'ID: '+strtrim(id[i],2),/RELATIVE)
 	!NULL = text(0.18,0.76,'$z: $'+z[i],/RELATIVE)

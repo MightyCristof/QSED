@@ -43,12 +43,14 @@ print, ' '
 
 
 rj_tail = 1
+sft = 'SFG1'
+;sft = 'SBC'
 ;; input data files
 temp_dir = '~/Research/sed_models/raw_templates/'
 a10 = 'assef+10/lrt_templates.dat'
 ext = 'assef+10/ext_law_data.dat'
-;k15 = 'kirkpatrick+15/Comprehensive_library/SFG1.txt'
-k15 = 'kirkpatrick+15/Comprehensive_library/SFG2.txt'
+k15 = 'kirkpatrick+15/Comprehensive_library/SFG1.txt'
+;k15 = 'kirkpatrick+15/Comprehensive_library/SFG2.txt'
 ;k15 = 'kirkpatrick+15/Comprehensive_library/SFG3.txt'
 
 ;; read A10 templates
@@ -97,6 +99,7 @@ endif else begin
     sfg = [sbc[0:iassef],sfg]					
 endelse
 
+if (sft eq 'SBC') then sfg = sbc
 ;; create template components structure
 comp = {wav: 0d, $
         kap: 0d, $
@@ -104,8 +107,8 @@ comp = {wav: 0d, $
 ;        agn2: 0d, $
         ell: 0d, $
 ;        sbc: 0d, $
-        irr: 0d, $
-        sfg: 0d $
+        sfg: 0d, $
+        irr: 0d $
         }
 comp = replicate(comp,n_elements(wav))
 

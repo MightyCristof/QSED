@@ -6,7 +6,7 @@
 ;   Read photometry from .FITS file and format for SED modeling.
 ;   
 ; CALLING SEQUENCE:
-;   read_sed_phot, file, [, /MASK, /NIR, /FORCED_SN ]
+;   read_sed_phot, file, [, /MASK, /NIR, /FORCED_PHOT, /MIN_ERR ]
 ;
 ; INPUTS:
 ;   file			- String containing the name of the photometry data file.
@@ -14,7 +14,7 @@
 ; OPTIONAL INPUTS:
 ;   /MASK           - Use mangle mask to remove sources in WISE near bright stars.
 ;   /NIR            - Only keep sources with at least 1 NIR detection.
-;   /FORCED_SN      - Require all WISE forced photometry to have S/N≥1.
+;   /FORCED_PHOT    - Replace AllWISE with unWISE forced photometry where S/N is greater.
 ;   /MIN_ERR        - Require a minimum error of ±0.05 mag (5% flux)
 ;   
 ; OUTPUTS:
@@ -44,7 +44,6 @@ PRO read_sed_phot, file, $
 	               MASK = mask, $
                    NIR = nir, $
                    FORCED_PHOT = forced_phot, $
-                   FORCED_SN = forced_sn, $
                    MIN_ERR = min_err
 
 
@@ -71,12 +70,6 @@ for f = 0,n_elements(file)-1 do begin
         if (nirlen gt 0) then data = data[inir] else continue
     endif
 
-    ;; keep only sources with unWISE data
-    if keyword_set(forced_phot) then begin
-        iunwise = where(data.ra_unwise ne -9999. and data.dec_unwise ne -9999.,unwiselen)
-        if (unwiselen eq 0) then continue
-        data = data[iunwise]
-    endif
     ;; SDSS and XDQSOz indices
     iisdss = data.ra_sdss ne -9999. and data.dec_sdss ne -9999.
     isdss = where(iisdss,sdsslen)
@@ -186,10 +179,13 @@ for f = 0,n_elements(file)-1 do begin
         for i = 0,n_elements(unwb)-1 do begin
         iw = where(strmatch(filt,unwb[i]),wct)				;; match unWISE band
             if (wct eq 0) then stop
-            re = execute(mag_vars[iw[0]]+' = '+unw[i])
-            re = execute(e_mag_vars[iw[0]]+' = '+e_unw[i])
-            re = execute(flux_vars[iw[0]]+' = '+unwf[i])
-            re = execute(e_flux_vars[iw[0]]+' = '+e_unwf[i])
+            re = execute('sn_wise = '+flux_vars[iw[0]]+'/'+e_flux_vars[iw[0]])
+            re = execute('sn_unw = '+unwf[i]+'/'+e_unwf[i])
+            irep = where(finite(sn_unw) and sn_unw gt sn_wise)
+            re = execute(mag_vars[iw[0]]+'[irep] = '+unw[i]+'[irep]')
+            re = execute(e_mag_vars[iw[0]]+'[irep] = '+e_unw[i]+'[irep]')
+            re = execute(flux_vars[iw[0]]+'[irep] = '+unwf[i]+'[irep]')
+            re = execute(e_flux_vars[iw[0]]+'[irep] = '+e_unwf[i]+'[irep]')
         endfor
     endif
     ;; output data structure	
@@ -229,71 +225,26 @@ for f = 0,n_elements(file)-1 do begin
     ;; minimum photometric errors of ±0.05 mag (5% flux)
     if keyword_set(min_err) then obs.e_flux = obs.e_flux > sqrt((-0.4*alog(10)*obs.flux*0.05)^2)
     
-    if keyword_set(forced_phot) then begin
-        ;; S/N > 3 for UV/optical/NIR photometry
-        inotir = where(~strmatch(filt,'WISE*'),ct)
-        if (ct eq 0) then stop
-        flux = obs.flux[inotir]
-        e_flux = obs.e_flux[inotir]
-        mag = obs.mag[inotir]
-        e_mag = obs.e_mag[inotir]
-        sn = flux/e_flux
-        isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
-        ;; remove observations that fail S/N cut
-        if (nbad gt 0) then begin
-            flux[badsn] = 0.
-            e_flux[badsn] = 0.
-            mag[badsn] = -9999.
-            e_mag[badsn] = -9999.
-        endif
-        obs.flux[inotir] = flux
-        obs.e_flux[inotir] = e_flux
-        obs.mag[inotir] = mag
-        obs.e_mag[inotir] = e_mag
-    
-        ;; S/N > 1 for forced photometry, otherwise trust it
-        if keyword_set(forced_sn) then begin
-            iir = where(strmatch(filt,'WISE*'),ct)
-            if (ct eq 0) then stop
-            flux = obs.flux[iir]
-            e_flux = obs.e_flux[iir]
-            mag = obs.mag[iir]
-            e_mag = obs.e_mag[iir]
-            sn = flux/e_flux
-            isn = where(finite(sn) and sn ge 1.,complement=badsn,ncomplement=nbad)
-            ;; remove observations that fail S/N cut
-            if (nbad gt 0) then begin
-                flux[badsn] = 0.
-                e_flux[badsn] = 0.
-                mag[badsn] = -9999.
-                e_mag[badsn] = -9999.
-            endif
-            obs.flux[iir] = flux
-            obs.e_flux[iir] = e_flux
-            obs.mag[iir] = mag
-            obs.e_mag[iir] = e_mag
-        endif
-    endif else BEGIN
-        ;; S/N > 3 for all photometry
-        flux = obs.flux
-        e_flux = obs.e_flux
-        mag = obs.mag
-        e_mag = obs.e_mag
-        sn = flux/e_flux
-        isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
-        ;; remove observations that fail S/N cut
-        if (nbad gt 0) then begin
-            flux[badsn] = 0.
-            e_flux[badsn] = 0.
-            mag[badsn] = -9999.
-            e_mag[badsn] = -9999.
-        endif
-        obs.flux = flux
-        obs.e_flux = e_flux
-        obs.mag = mag
-        obs.e_mag = e_mag
 
-    endelse
+    ;; S/N > 3 for all photometry
+    flux = obs.flux
+    e_flux = obs.e_flux
+    mag = obs.mag
+    e_mag = obs.e_mag
+    sn = flux/e_flux
+    isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
+    ;; remove observations that fail S/N cut
+    if (nbad gt 0) then begin
+        flux[badsn] = 0.
+        e_flux[badsn] = 0.
+        mag[badsn] = -9999.
+        e_mag[badsn] = -9999.
+    endif
+    obs.flux = flux
+    obs.e_flux = e_flux
+    obs.mag = mag
+    obs.e_mag = e_mag    
+
     ;; byte index for good photometry
     obs.bin = obs.flux gt 0. and obs.e_flux gt 0.				
     

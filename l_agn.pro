@@ -88,7 +88,7 @@ nu0 = (!const.c*1e6)/w0/(1.+redshift)
 
 ;; calculate flux
 nufnu0 = fnu0 * nu0
-print, nufnu0[0]
+;print, nufnu0[0]
 ;; luminosity distance in cgs
 testz = 10.^(dindgen(150)/100.)-(1.-min(z)>0.)          ;; range of z values to calculate dL
 dl = lumdist(testz,h0=70.,omega_m=0.3,lambda0=0.7)      ;; luminosity distance in Mpc; dL = (1+z)c ºdz/H(z)

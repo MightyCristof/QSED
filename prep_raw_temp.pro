@@ -42,9 +42,6 @@ print, 'Version 1.0'
 print, ' '
 
 
-rj_tail = 1
-sft = 'SFG1'
-;sft = 'SBC'
 ;; input data files
 temp_dir = '~/Research/sed_models/raw_templates/'
 a10 = 'assef+10/lrt_templates.dat'
@@ -80,26 +77,14 @@ dl = (10.*!const.parsec) * 100.			;; A10 templates are normalized to 10 pc; conv
 fnu = lum/(4.*!const.pi*dl^2)           ;; to centimeters and use same value for K15
 
 ;; match and normalize to A10 SBc
-if keyword_set(rj_tail) then begin
-    ;; match at 2-micron
-    loc = value_locate(wav,2.)                  ;; index of A10 wav where K15 begins
-    normal = sbc[loc+1]/fnu[0]                  ;; normalization of K15 template
-    ;; interpolate fnu to end of A10 wav array
-    sfg = spline(kirkwav,fnu*normal,wav[loc+1:-1])
-    ;; SFG is now A10 until the beginning of the SFG template and spans A10 wavelength
-    sfg = [sbc[0:loc],sfg]
-endif else begin
-    ;; match at 6-micron
-    iassef = 229
-    loc = value_locate(kirkwav,wav[iassef])		;; index of A10 wav to stitch K15 template
-    normal = sbc[iassef]/fnu[loc]				;; normalization of K15 template
-    ;; interpolate fnu to end of A10 wav array
-    sfg = spline(kirkwav,fnu*normal,wav[iassef+1:-1])	
-    ;; SFG is now A10 until the beginning of the SFG template and spans A10 wavelength
-    sfg = [sbc[0:iassef],sfg]					
-endelse
+;; match at 2-micron
+loc = value_locate(wav,2.)                  ;; index of A10 wav where K15 begins
+normal = sbc[loc+1]/fnu[0]                  ;; normalization of K15 template
+;; interpolate fnu to end of A10 wav array
+sfg = spline(kirkwav,fnu*normal,wav[loc+1:-1])
+;; SFG is now A10 until the beginning of the SFG template and spans A10 wavelength
+sfg = [sbc[0:loc],sfg]
 
-if (sft eq 'SBC') then sfg = sbc
 ;; create template components structure
 comp = {wav: 0d, $
         kap: 0d, $

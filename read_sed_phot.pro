@@ -19,9 +19,9 @@
 ;   
 ; OUTPUTS:
 ;   obs				- Structure containing all data for SED modeling. Subject to change!
-;                     Common contents include: Object ID, RA, Dec, mag+error, flux+error,
-;                     good photometry flag (bin), redshift+error, string containing all
-;                     redshift+error from multiple sources (zarr+e_zarr).
+;                     Common contents include: Object ID, position+error, mag+error, 
+;                     flux+error, good photometry flag (bin), redshift+error, string
+;                     containing all redshift+error from multiple sources (zarr+e_zarr).
 ;   band			- Array of central wavelength for photometric data. 
 ;   
 ; OPTIONAL OUTPUTS:
@@ -79,14 +79,17 @@ for f = 0,n_elements(file)-1 do begin
     filt = ['SDSS1','SDSS2','SDSS3','SDSS4','SDSS5', $
             'WISE1','WISE2','WISE3','WISE4', $
             'UK1','UK2','UK3','UK4', $
+            'TWOM1','TWOM2','TWOM3', $
             'GALEX1','GALEX2']
     mag_vars = ['DERED_U','DERED_G','DERED_R','DERED_I','DERED_Z', $
                 'W1','W2','W3','W4', $
                 'YPETROMAG','J_1PETROMAG','HPETROMAG','KPETROMAG', $
+                'J_M_2MASS','H_M_2MASS','K_M_2MASS', $
                 'FUV_MAG','NUV_MAG']
     e_mag_vars = ['MODELMAGERR_u','MODELMAGERR_g','MODELMAGERR_r','MODELMAGERR_i','MODELMAGERR_z', $
                   'W1ERR','W2ERR','W3ERR','W4ERR', $
                   'YPETROMAGERR','J_1PETROMAGERR','HPETROMAGERR','KPETROMAGERR', $
+                  'J_MSIG_2MASS','H_MSIG_2MASS','K_MSIG_2MASS', $
                   'FUV_MAGERR','NUV_MAGERR']
     flux_vars = mag_vars+'_FLUX'
     e_flux_vars = e_mag_vars+'_FLUX'
@@ -192,7 +195,9 @@ for f = 0,n_elements(file)-1 do begin
     ndata = n_elements(data)
     obs = {objid: long64(0), $
            ra: 0d, $
+           e_ra: 0d, $
            dec: 0d, $
+           e_dec: 0d, $
            mag: dblarr(nfilts), $
            e_mag: dblarr(nfilts), $
            flux: dblarr(nfilts), $
@@ -214,6 +219,11 @@ for f = 0,n_elements(file)-1 do begin
     if (xdqsolen gt 0.) then obs[ixdqso].objid = long64(strtrim(data[ixdqso].objid_xdqso,2))
     obs.ra = data.ra
     obs.dec = data.dec
+    ;; positional errors in arcsec
+    obs[isdss].e_ra = data[isdss].raerr
+    obs[isdss].e_dec = data[isdss].decerr
+    obs[ixdqso].e_ra = data[ixdqso].sigra
+    obs[ixdqso].e_dec = data[ixdqso].sigdec
     
     for i = 0,n_elements(filt)-1 do begin
         re = execute('obs.mag[i]='+mag_vars[i])

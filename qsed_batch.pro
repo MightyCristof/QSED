@@ -95,6 +95,7 @@ for i = 0,n_elements(fit_file)-1 do begin
 		;; match dimensions of output array
 		re = execute('sz = size('+vars[ivar[j]]+',/n_dimensions)')
 		case sz of
+		    0: re = execute(temp_vars[j]+' = ['+temp_vars[j]+','+vars[ivar[j]]+']')
 			1: re = execute(temp_vars[j]+' = ['+temp_vars[j]+','+vars[ivar[j]]+']')
 			2: re = execute(temp_vars[j]+' = [['+temp_vars[j]+'],['+vars[ivar[j]]+']]')
 		endcase

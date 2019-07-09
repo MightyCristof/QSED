@@ -124,6 +124,10 @@ foreach inst,instr do begin
 			wavband = [wavband,'IRAC1','IRAC2','IRAC3','IRAC4']
 			obswav = [obswav,3.6,4.5,5.8,8.]
 			end
+		'IRAS': begin
+		    wavband = [wavband,'IRAS1','IRAS2','IRAS3','IRAS4']
+		    obswav = [obswav,12.,25.,60.,100.]
+		    end
 		'MIPS': begin
 			wavband = [wavband,'MIPS1','MIPS2','MIPS3']
 			obswav = [obswav,24.,70.,160.]

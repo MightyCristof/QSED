@@ -56,9 +56,10 @@ common _comp
 if (n_elements(temp) eq 0) then components = tag_names(comp) else $
                                 components = strupcase(temp)
 ;; all possible templates (SED modeling procedure can handle max=5 templates)
-temps = ['AGN','AGN2','ELL','SBC','SFG','IRR','DST']   
+temps = ['AGN','ELL','SFG','IRR','DST']   
 ;; colors for plotting
-col = ['purple','purple','red','dark green','dark green','medium blue','brown']
+col = [[204,121,167],[213,94,0],[0,158,115],[0,114,178],[240,228,66]]
+;col = ['purple','purple','red','dark green','dark green','medium blue','brown']
 ;; match input components (use MATCH2.PRO to keep named order of TEMPS; MATCH.PRO alphabetizes; important for plotting purposes)
 match2,components,temps,icomp,itemp
 ;; ensure we contain at least one valid template and sort
@@ -117,6 +118,7 @@ z = strtrim(string(z,format='(d5.3)'),2)
 ebv = strtrim(string(ebv,format='(d5.2)'),2)
 coeff = reform(strtrim(string(coeff,format='(e10.3)'),2),ntemps,nobj)
 chi = strtrim(string(chi[0,*],format='(d0.2)'),2)+'/'+strtrim(string(chi[1,*],format='(i)'),2)
+label = transpose([['ID: '+strtrim(id,2)],['$\itz\rm: $'+z],['$\itE(B-V)\rm$: '+ebv],['$\chi^2 / DoF$: '+chi]])
 
 ;; plot SEDs
 e = {xr:[0.05,30.],yra:[floor(min(flux[where(finite(flux))]))-1.5,ceil(max(flux[where(finite(flux))]))+2.],xlog:1, $
@@ -131,13 +133,12 @@ for i = 0,nobj-1 do begin
     p = plot(tempwav[*,i],model[*,i],/ov)                                                           ;; plot coadded models
     p = errorplot(objwav[ig,i],flux[ig,i],err[ig,i],'o',/SYM_FILLED,LINESTYLE='',/OV)               ;; plot photometry
     ;; Model parameters
-    !NULL = text(0.18,0.80,'ID: '+strtrim(id[i],2),/RELATIVE)
-	!NULL = text(0.18,0.76,'$z: $'+z[i],/RELATIVE)
-	!NULL = text(0.18,0.72,'$E(B-V)$: '+ebv[i],/RELATIVE)
-	!NULL = text(0.18,0.68,'$\chi^2 / DoF$: '+chi[i],/RELATIVE)
 	yp = 0.80
-	for t = 0,ntemps-1 do txt = text(0.68,yp-t*0.04,temps[t]+': '+coeff[t,i],col=col[t],/RELATIVE)  ;; template contribution
-
+	for t = 0,ntemps-1 do begin
+	    lab = text(0.18,yp-t*0.04,label[t,i],/RELATIVE)
+	    txt = text(0.68,yp-t*0.04,temps[t]+': '+coeff[t,i],col=col[t],/RELATIVE)  ;; template contribution
+    endfor
+    
 	if keyword_set(sav) then if (strupcase(sav) eq 'EPS') then p.save,strtrim(id[i],2)+'.eps' else $
 															   p.save,strtrim(id[i],2)+'.png'
 endfor

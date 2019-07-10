@@ -6,7 +6,7 @@
 ;   Read photometry from .FITS file and format for SED modeling.
 ;   
 ; CALLING SEQUENCE:
-;   read_sed_phot, file, [, /MASK, /NIR, /FORCED_PHOT, /MIN_ERR ]
+;   read_sed_phot, file, [, /MASK, /NIR, /DERED, /FORCED_PHOT, /MIN_ERR ]
 ;
 ; INPUTS:
 ;   file			- String containing the name of the photometry data file.
@@ -14,6 +14,7 @@
 ; OPTIONAL INPUTS:
 ;   /MASK           - Use mangle mask to remove sources in WISE near bright stars.
 ;   /NIR            - Only keep sources with at least 1 NIR detection.
+;   /DERED          - Correct fluxes for Galactic extinction.
 ;   /FORCED_PHOT    - Replace AllWISE with unWISE forced photometry where S/N is greater.
 ;   /MIN_ERR        - Require a minimum error of ±0.05 mag (5% flux)
 ;   
@@ -35,6 +36,9 @@
 ;       3. Photometry must be "clean" (SDSS clean=1)
 ;       4. At least 7 photometric bands to (hopefully) avoid overfitting
 ;   
+;   If the DERED keyword is set, the path to dust map directory must be set prior 
+;   to running script.
+;   
 ; EXAMPLES:
 ;
 ; REVISION HISTORY:
@@ -43,6 +47,7 @@
 PRO read_sed_phot, file, $
 	               MASK = mask, $
                    NIR = nir, $
+                   DERED = dered, $
                    FORCED_PHOT = forced_phot, $
                    MIN_ERR = min_err
 
@@ -73,8 +78,25 @@ for f = 0,n_elements(file)-1 do begin
     ;; SDSS and XDQSOz indices
     iisdss = data.ra_sdss ne -9999. and data.dec_sdss ne -9999.
     isdss = where(iisdss,sdsslen)
-    ixdqso = where(~iisdss,xdqsolen)
+    ixdqso = where(~iisdss,xdqsolen,/null)
     
+    ;; number of catalog sources
+    ndata = n_elements(data)
+    ;; source data vectors
+    objid = lon64arr(ndata)
+    ra = dblarr(ndata) & e_ra = dblarr(ndata)
+    dec = dblarr(ndata) & e_dec = dblarr(ndata)
+    ;; source data fill
+    objid[isdss] = data[isdss].objid
+    objid[ixdqso] = data[ixdqso].objid_xdqso
+    ra[*] = data.ra
+    dec[*] = data.dec
+    ;; positional errors in arcsec
+    e_ra[isdss] = data[isdss].raerr
+    e_dec[isdss] = data[isdss].decerr
+    e_ra[ixdqso] = data[ixdqso].sigra
+    e_dec[ixdqso] = data[ixdqso].sigdec
+
     ;; photometry variables (mag, e_mag, flux, e_flux)
     filt = ['SDSS1','SDSS2','SDSS3','SDSS4','SDSS5', $
             'WISE1','WISE2','WISE3','WISE4', $
@@ -92,6 +114,7 @@ for f = 0,n_elements(file)-1 do begin
                   'J_MSIG_2MASS','H_MSIG_2MASS','K_MSIG_2MASS', $
                   'FUV_MAGERR','NUV_MAGERR']
     flux_vars = mag_vars+'_FLUX'
+    dered_vars = flux_vars+'_UNRED'
     e_flux_vars = e_mag_vars+'_FLUX'
     nfilts = n_elements(filt)
 
@@ -101,6 +124,13 @@ for f = 0,n_elements(file)-1 do begin
         re = execute(e_mag_vars[i]+'=data.'+e_mag_vars[i])
         re = execute(flux_vars[i]+'=magflux('+mag_vars[i]+','+e_mag_vars[i]+',filt[i],err='+e_flux_vars[i]+')')
     endfor
+	
+	;; correct for Galactic extinction
+    if keywword_set(dered) then $
+        for i = 0,nfilts-1 do $
+            ;; if using SDSS photometry that has not been deredenned, comment out the line below
+            if (strmatch(filt[i],'SDSS*') eq 0) then $
+                re = execute(dered_vars[i]+'=mw_ext_corr(ra,dec,'+flux_vars[i]+',filt[i])')
 	
     ;; conversions needed for nanomaggies & Vega2AB flux conversions
     ;; XDQSOz and unWISE in nanomaggies
@@ -192,7 +222,6 @@ for f = 0,n_elements(file)-1 do begin
         endfor
     endif
     ;; output data structure	
-    ndata = n_elements(data)
     obs = {objid: long64(0), $
            ra: 0d, $
            e_ra: 0d, $
@@ -217,13 +246,11 @@ for f = 0,n_elements(file)-1 do begin
     ;; source data fill
     obs[isdss].objid = data[isdss].objid
     if (xdqsolen gt 0.) then obs[ixdqso].objid = long64(strtrim(data[ixdqso].objid_xdqso,2))
-    obs.ra = data.ra
-    obs.dec = data.dec
+    obs.ra = ra
+    obs.dec = dec
     ;; positional errors in arcsec
-    obs[isdss].e_ra = data[isdss].raerr
-    obs[isdss].e_dec = data[isdss].decerr
-    obs[ixdqso].e_ra = data[ixdqso].sigra
-    obs[ixdqso].e_dec = data[ixdqso].sigdec
+    obs.e_ra = e_ra
+    obs.e_dec = e_dec
     
     for i = 0,n_elements(filt)-1 do begin
         re = execute('obs.mag[i]='+mag_vars[i])

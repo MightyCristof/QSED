@@ -128,7 +128,7 @@ for f = 0,n_elements(file)-1 do begin
     endfor
 	
 	;; correct for Galactic extinction
-    if keywword_set(dered) then $
+    if keyword_set(dered) then $
         for i = 0,nbands-1 do $
             ;; if using SDSS photometry that has not been deredenned, comment out the line below
             if (strmatch(band[i],'SDSS*') eq 0) then $

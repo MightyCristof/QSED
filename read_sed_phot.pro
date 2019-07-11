@@ -6,7 +6,7 @@
 ;   Read photometry from .FITS file and format for SED modeling.
 ;   
 ; CALLING SEQUENCE:
-;   read_sed_phot, file, [, /MASK, /NIR, /DERED, /FORCED_PHOT, /MIN_ERR ]
+;   read_sed_phot, file, [, /MASK, /NIR, /DERED, /FORCED_PHOT, /CORR_2MASS, /MIN_ERR ]
 ;
 ; INPUTS:
 ;   file			- String containing the name of the photometry data file.
@@ -16,6 +16,7 @@
 ;   /NIR            - Only keep sources with at least 1 NIR detection.
 ;   /DERED          - Correct fluxes for Galactic extinction.
 ;   /FORCED_PHOT    - Replace AllWISE with unWISE forced photometry where S/N is greater.
+;   /CORR_2MASS     - If using UKIDSS & 2MASS, add a correction fator to 2MASS data.
 ;   /MIN_ERR        - Require a minimum error of ±0.05 mag (5% flux)
 ;   
 ; OUTPUTS:
@@ -46,9 +47,10 @@
 ;-----------------------------------------------------------------------------------------
 PRO read_sed_phot, file, $
 	               MASK = mask, $
-                   NIR = nir, $
+                   ;NIR = nir, $
                    DERED = dered, $
                    FORCED_PHOT = forced_phot, $
+                   CORR_2MASS = corr_2mass, $
                    MIN_ERR = min_err
 
 
@@ -69,11 +71,11 @@ for f = 0,n_elements(file)-1 do begin
     ;; read data
     data = mrdfits(file[f],1)
     
-    ;; restrict to sources with NIR photometry 
-    if keyword_set(nir) then begin
-        inir = where(data.ra_ukidss gt -9999. and data.dec_ukidss gt -9999.,nirlen)
-        if (nirlen gt 0) then data = data[inir] else continue
-    endif
+;    ;; restrict to sources with NIR photometry 
+;    if keyword_set(nir) then begin
+;        inir = where(data.ra_ukidss gt -9999. and data.dec_ukidss gt -9999.,nirlen)
+;        if (nirlen gt 0) then data = data[inir] else continue
+;    endif
 
     ;; SDSS and XDQSOz indices
     iisdss = data.ra_sdss ne -9999. and data.dec_sdss ne -9999.
@@ -98,7 +100,7 @@ for f = 0,n_elements(file)-1 do begin
     e_dec[ixdqso] = data[ixdqso].sigdec
 
     ;; photometry variables (mag, e_mag, flux, e_flux)
-    filt = ['SDSS1','SDSS2','SDSS3','SDSS4','SDSS5', $
+    band = ['SDSS1','SDSS2','SDSS3','SDSS4','SDSS5', $
             'WISE1','WISE2','WISE3','WISE4', $
             'UK1','UK2','UK3','UK4', $
             'TWOM1','TWOM2','TWOM3', $
@@ -116,21 +118,21 @@ for f = 0,n_elements(file)-1 do begin
     flux_vars = mag_vars+'_FLUX'
     dered_vars = flux_vars+'_UNRED'
     e_flux_vars = e_mag_vars+'_FLUX'
-    nfilts = n_elements(filt)
+    nbands = n_elements(band)
 
     ;; calculate flux & errors in microjanskys
-    for i = 0,nfilts-1 do begin
+    for i = 0,nbands-1 do begin
         re = execute(mag_vars[i]+'=data.'+mag_vars[i])
         re = execute(e_mag_vars[i]+'=data.'+e_mag_vars[i])
-        re = execute(flux_vars[i]+'=magflux('+mag_vars[i]+','+e_mag_vars[i]+',filt[i],err='+e_flux_vars[i]+')')
+        re = execute(flux_vars[i]+'=magflux('+mag_vars[i]+','+e_mag_vars[i]+',band[i],err='+e_flux_vars[i]+')')
     endfor
 	
 	;; correct for Galactic extinction
     if keywword_set(dered) then $
-        for i = 0,nfilts-1 do $
+        for i = 0,nbands-1 do $
             ;; if using SDSS photometry that has not been deredenned, comment out the line below
-            if (strmatch(filt[i],'SDSS*') eq 0) then $
-                re = execute(dered_vars[i]+'=mw_ext_corr(ra,dec,'+flux_vars[i]+',filt[i])')
+            if (strmatch(band[i],'SDSS*') eq 0) then $
+                re = execute(flux_vars[i]+'=mw_ext_corr(ra,dec,'+flux_vars[i]+',band[i])')
 	
     ;; conversions needed for nanomaggies & Vega2AB flux conversions
     ;; XDQSOz and unWISE in nanomaggies
@@ -143,7 +145,7 @@ for f = 0,n_elements(file)-1 do begin
         ;;             SDSS     GALEX   UKIDSS   WISE
         ;; psfflux==[u,g,r,i,z,NUV,FUV,Y,J,H,Ks,W1,W2]
         psfband = ['SDSS1','SDSS2','SDSS3','SDSS4','SDSS5','GALEX2','GALEX1','UK1','UK2','UK3','UK4','WISE1','WISE2']
-        match2,filt,psfband,ix2f,if2x									;; EXTREMELY IMPORTANT!!!
+        match2,band,psfband,ix2f,if2x									;; EXTREMELY IMPORTANT!!!
         xdb = psfband[ix2f]
         xdf = nmgy2mujy * data[ixdqso].psfflux[ix2f]					;; here there is no WISE3/WISE4 match... so these are
         xde = nmgy2mujy * 1./sqrt(data[ixdqso].psfflux_ivar[ix2f])		;; replaced with SDSS1 (where psfband[ixd2f=-1]).
@@ -169,7 +171,7 @@ for f = 0,n_elements(file)-1 do begin
         xde[iwise,*] *= v2ab
         
         ;; add XDQSOz photometry to full photometry
-        for i = 0,n_elements(filt)-1 do begin
+        for i = 0,n_elements(band)-1 do begin
             if (ix2f[i] eq -1) then continue							;; skip the unmatched WISE3/WISE4
             re = execute(flux_vars[i]+'[ixdqso] = xdf[i,*]')
             re = execute(e_flux_vars[i]+'[ixdqso] = xde[i,*]')
@@ -180,7 +182,7 @@ for f = 0,n_elements(file)-1 do begin
     
     ;; add unWISE flux and calculate magnitudes
     if keyword_set(forced_phot) then begin
-        unwb = filt[where(strmatch(filt,'WISE*'),ct)]			;; unWISE band
+        unwb = band[where(strmatch(band,'WISE*'),ct)]			;; unWISE band
         if (ct eq 0) then stop
         unwf = ['w1','w2','w3','w4']+'_nanomaggies'					;; unWISE flux
         e_unwf = unwf + '_ivar'										;; unWISE inverse variance
@@ -210,7 +212,7 @@ for f = 0,n_elements(file)-1 do begin
     
         ;; add unWISE photometry to full photometry
         for i = 0,n_elements(unwb)-1 do begin
-        iw = where(strmatch(filt,unwb[i]),wct)				;; match unWISE band
+        iw = where(strmatch(band,unwb[i]),wct)				;; match unWISE band
             if (wct eq 0) then stop
             re = execute('sn_wise = '+flux_vars[iw[0]]+'/'+e_flux_vars[iw[0]])
             re = execute('sn_unw = '+unwf[i]+'/'+e_unwf[i])
@@ -227,15 +229,11 @@ for f = 0,n_elements(file)-1 do begin
            e_ra: 0d, $
            dec: 0d, $
            e_dec: 0d, $
-           mag: dblarr(nfilts), $
-           e_mag: dblarr(nfilts), $
-           flux: dblarr(nfilts), $
-           e_flux: dblarr(nfilts), $
-           ;raw_mag: dblarr(nfilts), $
-           ;raw_e_mag: dblarr(nfilts), $
-           ;raw_flux: dblarr(nfilts), $
-           ;raw_e_flux: dblarr(nfilts), $		   
-           bin: bytarr(nfilts), $
+           mag: dblarr(nbands), $
+           e_mag: dblarr(nbands), $
+           flux: dblarr(nbands), $
+           e_flux: dblarr(nbands), $
+           bin: bytarr(nbands), $
            z: 0d, $
            e_z: 0d, $
            zarr: '', $
@@ -252,7 +250,7 @@ for f = 0,n_elements(file)-1 do begin
     obs.e_ra = e_ra
     obs.e_dec = e_dec
     
-    for i = 0,n_elements(filt)-1 do begin
+    for i = 0,n_elements(band)-1 do begin
         re = execute('obs.mag[i]='+mag_vars[i])
         re = execute('obs.e_mag[i]='+e_mag_vars[i])
         re = execute('obs.flux[i]='+flux_vars[i])
@@ -262,15 +260,14 @@ for f = 0,n_elements(file)-1 do begin
     ;; minimum photometric errors of ±0.05 mag (5% flux)
     if keyword_set(min_err) then obs.e_flux = obs.e_flux > sqrt((-0.4*alog(10)*obs.flux*0.05)^2)
     
-
     ;; S/N > 3 for all photometry
     flux = obs.flux
     e_flux = obs.e_flux
     mag = obs.mag
     e_mag = obs.e_mag
+    ;; remove observations that fail S/N cut
     sn = flux/e_flux
     isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
-    ;; remove observations that fail S/N cut
     if (nbad gt 0) then begin
         flux[badsn] = 0.
         e_flux[badsn] = 0.
@@ -285,6 +282,22 @@ for f = 0,n_elements(file)-1 do begin
     ;; byte index for good photometry
     obs.bin = obs.flux gt 0. and obs.e_flux gt 0.				
     
+    ;; normalize UKIDSS and 2MASS data
+    if keyword_set(corr_2mass) then begin
+        adj_2mass,band,flux,e_flux,obs.bin
+        ;; remove observations that fail S/N cut
+        sn = flux/e_flux
+        isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
+        if (nbad gt 0) then begin
+            flux[badsn] = 0.
+            e_flux[badsn] = 0.
+            mag[badsn] = -9999.
+            e_mag[badsn] = -9999.
+        endif
+        obs.flux = flux
+        obs.e_flux = e_flux
+    endif
+        
     ;; full redshift data set
     ;; (1) ZP     == SDSS DR14 phot-z
     ;; (2) PEAKZ  == XDQSOz (DiPompeo+15)
@@ -348,13 +361,13 @@ for f = 0,n_elements(file)-1 do begin
     endif
     
     ;; ...have NIR photometry; loss from S/N
-    if keyword_set(nir) then begin
-        inir = where(strmatch(filt,'UK*'),nirlen)
-        if (nirlen eq 0) then stop
-        ikeep = where(total(obs.bin[inir],1) ge 1,ct)
-        if (ct eq 0) then stop
-        obs = obs[ikeep]
-    endif
+;    if keyword_set(nir) then begin
+;        inir = where(strmatch(band,'UK*'),nirlen)
+;        if (nirlen eq 0) then stop
+;        ikeep = where(total(obs.bin[inir],1) ge 1,ct)
+;        if (ct eq 0) then stop
+;        obs = obs[ikeep]
+;    endif
 
     ;; finally, no duplicate objects in data set!
     if (n_elements(uniq(obs.objid,sort(obs.objid))) ne n_elements(obs)) then begin
@@ -363,7 +376,6 @@ for f = 0,n_elements(file)-1 do begin
         obs = obs[ikeep]
     endif
     
-    band = filt
     save,obs,band,/compress,file=outfile[f]
 endfor
 

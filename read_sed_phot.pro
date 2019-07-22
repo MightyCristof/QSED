@@ -212,7 +212,7 @@ for f = 0,n_elements(file)-1 do begin
     
         ;; add unWISE photometry to full photometry
         for i = 0,n_elements(unwb)-1 do begin
-        iw = where(strmatch(band,unwb[i]),wct)				;; match unWISE band
+            iw = where(strmatch(band,unwb[i]),wct)				;; match unWISE band
             if (wct eq 0) then stop
             re = execute('sn_wise = '+flux_vars[iw[0]]+'/'+e_flux_vars[iw[0]])
             re = execute('sn_unw = '+unwf[i]+'/'+e_unwf[i])
@@ -223,6 +223,49 @@ for f = 0,n_elements(file)-1 do begin
             re = execute(e_flux_vars[iw[0]]+'[irep] = '+e_unwf[i]+'[irep]')
         endfor
     endif
+    
+    ;; combine photometry
+    mag = dblarr(nbands,ndata)
+    e_mag = dblarr(nbands,ndata)
+    flux = dblarr(nbands,ndata)
+    e_flux = dblarr(nbands,ndata)
+    for i = 0,nbands-1 do begin
+        re = execute('mag[i,*]='+mag_vars[i])
+        re = execute('e_mag[i,*]='+e_mag_vars[i])
+        re = execute('flux[i,*]='+flux_vars[i])
+        re = execute('e_flux[i,*]='+e_flux_vars[i])
+    endfor
+    ;; minimum photometric errors of ±0.05 mag (5% flux)
+    if keyword_set(min_err) then e_flux = e_flux > sqrt((-0.4*alog(10)*flux*0.05)^2)
+    
+    ;; remove observations that fail S/N cut
+    sn = flux/e_flux
+    isn = where(finite(sn) and sn ge 3.,complement=ibadsn,ncomplement=nbad)
+    if (nbad gt 0) then begin
+        flux[ibadsn] = 0.
+        e_flux[ibadsn] = 0.
+        mag[ibadsn] = -9999.
+        e_mag[ibadsn] = -9999.
+    endif
+    ;; byte index for good photometry
+    bin = flux gt 0. and e_flux gt 0.
+
+    ;; normalize UKIDSS and 2MASS data
+    if keyword_set(corr_2mass) then begin
+        offset_2mass,band,flux,e_flux,bin
+        ;; remove observations that fail S/N cut
+        sn = flux/e_flux
+        isn = where(finite(sn) and sn ge 3.,complement=ibadsn,ncomplement=nbad)
+        if (nbad gt 0) then begin
+            flux[ibadsn] = 0.
+            e_flux[ibadsn] = 0.
+            mag[ibadsn] = -9999.
+            e_mag[ibadsn] = -9999.
+        endif
+        bin[ibadsn] = 0
+    endif    
+    
+    ;; SOURCE DATA FILL
     ;; output data structure	
     obs = {objid: long64(0), $
            ra: 0d, $
@@ -241,62 +284,20 @@ for f = 0,n_elements(file)-1 do begin
            }
     obs = replicate(obs,ndata)
     
-    ;; source data fill
+    ;; object ID and positions
     obs[isdss].objid = data[isdss].objid
     if (xdqsolen gt 0.) then obs[ixdqso].objid = long64(strtrim(data[ixdqso].objid_xdqso,2))
     obs.ra = ra
     obs.dec = dec
-    ;; positional errors in arcsec
     obs.e_ra = e_ra
     obs.e_dec = e_dec
-    
-    for i = 0,n_elements(band)-1 do begin
-        re = execute('obs.mag[i]='+mag_vars[i])
-        re = execute('obs.e_mag[i]='+e_mag_vars[i])
-        re = execute('obs.flux[i]='+flux_vars[i])
-        re = execute('obs.e_flux[i]='+e_flux_vars[i])
-        ;re = execute('obs.raw_e_flux[i]='+e_flux_vars[i])
-    endfor
-    ;; minimum photometric errors of ±0.05 mag (5% flux)
-    if keyword_set(min_err) then obs.e_flux = obs.e_flux > sqrt((-0.4*alog(10)*obs.flux*0.05)^2)
-    
-    ;; S/N > 3 for all photometry
-    flux = obs.flux
-    e_flux = obs.e_flux
-    mag = obs.mag
-    e_mag = obs.e_mag
-    ;; remove observations that fail S/N cut
-    sn = flux/e_flux
-    isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
-    if (nbad gt 0) then begin
-        flux[badsn] = 0.
-        e_flux[badsn] = 0.
-        mag[badsn] = -9999.
-        e_mag[badsn] = -9999.
-    endif
+    ;; photometry data fill
+    obs.mag = mag
+    obs.e_mag = e_mag
     obs.flux = flux
     obs.e_flux = e_flux
-    obs.mag = mag
-    obs.e_mag = e_mag    
-
-    ;; byte index for good photometry
-    obs.bin = obs.flux gt 0. and obs.e_flux gt 0.				
-    
-    ;; normalize UKIDSS and 2MASS data
-    if keyword_set(corr_2mass) then begin
-        adj_2mass,band,flux,e_flux,obs.bin
-        ;; remove observations that fail S/N cut
-        sn = flux/e_flux
-        isn = where(finite(sn) and sn ge 3.,complement=badsn,ncomplement=nbad)
-        if (nbad gt 0) then begin
-            flux[badsn] = 0.
-            e_flux[badsn] = 0.
-            mag[badsn] = -9999.
-            e_mag[badsn] = -9999.
-        endif
-        obs.flux = flux
-        obs.e_flux = e_flux
-    endif
+    ;; good photometry flag
+    obs.bin = bin
         
     ;; full redshift data set
     ;; (1) ZP     == SDSS DR14 phot-z
@@ -326,7 +327,7 @@ for f = 0,n_elements(file)-1 do begin
         e_zarr += ','
     endfor
     
-    ;; save all redshift information
+    ;; finalized source redshift information
     obs.z = z
     obs.e_z = e_z
     obs.zarr = zarr

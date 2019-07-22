@@ -1,7 +1,7 @@
-PRO adj_2mass, filt, $
-               flx, $
-               err, $
-               gobs
+PRO offset_2mass, filt, $
+                  flx, $
+                  err, $
+                  gobs
 
 
 ;; results of POLY_FIT.PRO against output UK-2MASS fluxes
@@ -19,9 +19,9 @@ if (ct2m eq 3 and ctuk eq 4) then begin
     for i = 0,ct2m-1 do begin
         iboth = where(total(gobs[[i2m[i],iuk[i]],*],1) eq 2,ct)
         flx_2m = reform(alog10(flx[i2m[i],iboth]))
-        err_2m = reform((err[i2m[i],iboth]/(flx[i2m[i],iboth]*alog(10)))^2)
+        var_2m = reform((err[i2m[i],iboth]/(flx[i2m[i],iboth]*alog(10)))^2)
         flx_uk = reform(alog10(flx[iuk[i],iboth]))
-        err_uk = reform((err[iuk[i],iboth]/(flx[iuk[i],iboth]*alog(10)))^2)
+        var_uk = reform((err[iuk[i],iboth]/(flx[iuk[i],iboth]*alog(10)))^2)
         ;; UKIDSS-2MASS relation
         ;rel2m = poly_fit(flx_2m,flx_uk,2)
         ;fit2m = rel2m[0] + rel2m[1]*flx_2m + rel2m[2]*flx_2m^2
@@ -41,20 +41,20 @@ if (ct2m eq 3 and ctuk eq 4) then begin
         stat = moment(diff)
         stat_lo = moment(diff[0:imin])
         stat_hi = moment(diff[imin:-1])
-        temp_err = err_2m
         temp_flx = flx_2m
+        temp_var = var_2m
         ilo = where(flx_2m le (4.6<fitx[imin]),ct)
         if (ct gt 0.) then begin
-            temp_err[ilo] += stat_lo[1]
             temp_flx[ilo] += stat_lo[0]
+            temp_var[ilo] += stat_lo[1]
         endif
         ihi = where(flx_2m gt fitx[imin],ct)
         if (ct gt 0.) then begin
-            temp_err[ihi] += stat_hi[1]
             temp_flx[ihi] += stat_hi[0]
+            temp_var[ihi] += stat_hi[1]
         endif
         corr_flx = 10.^temp_flx
-        corr_err = sqrt(temp_err)*alog(10)*corr_flx
+        corr_err = sqrt(corr_flx^2*alog(10)^2*temp_var)
         flx[i2m[i],iboth] = corr_flx
         err[i2m[i],iboth] = corr_err
     endfor

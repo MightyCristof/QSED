@@ -90,10 +90,12 @@ nu0 = (!const.c*1e6)/w0/(1.+redshift)
 nufnu0 = fnu0 * nu0
 ;print, nufnu0[0]
 ;; luminosity distance in cgs
-testz = 10.^(dindgen(150)/100.)-(1.-min(z)>0.)          ;; range of z values to calculate dL
-dl = lumdist(testz,h0=70.,omega_m=0.3,lambda0=0.7)      ;; luminosity distance in Mpc; dL = (1+z)c ºdz/H(z)
-dl = interpol(dl,testz,z)                               ;; interpolation to input redshift
-dl2 = (dl * 1e6 * !const.parsec * 1e2)^2                ;; luminosity distance converted from Mpc to cm
+dl2 = dlum(z,/squared)
+;; below code DLUM.PRO
+;testz = 10.^(dindgen(150)/100.)-(1.-min(z)>0.)          ;; range of z values to calculate dL
+;dl = lumdist(testz,h0=70.,omega_m=0.3,lambda0=0.7)      ;; luminosity distance in Mpc; dL = (1+z)c ºdz/H(z)
+;dl = interpol(dl,testz,z)                               ;; interpolation to input redshift
+;dl2 = (dl * 1e6 * !const.parsec * 1e2)^2                ;; luminosity distance converted from Mpc to cm
 
 ;; luminosity L in cgs (ergs/s)
 lum = 4.*!const.pi*dl2*nufnu0

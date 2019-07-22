@@ -47,7 +47,6 @@
 ;-----------------------------------------------------------------------------------------
 PRO read_sed_phot, file, $
 	               MASK = mask, $
-                   ;NIR = nir, $
                    DERED = dered, $
                    FORCED_PHOT = forced_phot, $
                    CORR_2MASS = corr_2mass, $
@@ -71,12 +70,6 @@ for f = 0,n_elements(file)-1 do begin
     ;; read data
     data = mrdfits(file[f],1)
     
-;    ;; restrict to sources with NIR photometry 
-;    if keyword_set(nir) then begin
-;        inir = where(data.ra_ukidss gt -9999. and data.dec_ukidss gt -9999.,nirlen)
-;        if (nirlen gt 0) then data = data[inir] else continue
-;    endif
-
     ;; SDSS and XDQSOz indices
     iisdss = data.ra_sdss ne -9999. and data.dec_sdss ne -9999.
     isdss = where(iisdss,sdsslen)
@@ -361,15 +354,6 @@ for f = 0,n_elements(file)-1 do begin
         obs = obs[ikeep]
     endif
     
-    ;; ...have NIR photometry; loss from S/N
-;    if keyword_set(nir) then begin
-;        inir = where(strmatch(band,'UK*'),nirlen)
-;        if (nirlen eq 0) then stop
-;        ikeep = where(total(obs.bin[inir],1) ge 1,ct)
-;        if (ct eq 0) then stop
-;        obs = obs[ikeep]
-;    endif
-
     ;; finally, no duplicate objects in data set!
     if (n_elements(uniq(obs.objid,sort(obs.objid))) ne n_elements(obs)) then begin
         print, 'DUPLICATE SOURCE DETECTED!'

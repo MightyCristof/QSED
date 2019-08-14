@@ -65,7 +65,7 @@ match2,components,temps,icomp,itemp
 ;; ensure we contain at least one valid template and sort
 if (total(itemp ne -1) le 0) then stop		           
 temps = temps[where(itemp ne -1)]
-col = col[where(itemp ne -1)]
+col = col[*,where(itemp ne -1)]
 ntemps = n_elements(temps)
 
 ;; extract indices of sources to plot
@@ -129,14 +129,14 @@ for i = 0,nobj-1 do begin
     ig = where(bin[*,i],/null)
     if keyword_set(sav) then p = plot(objwav[ig,i],flux[ig,i],_extra=e,/BUFFER) else $              ;; set plotting window
                              p = plot(objwav[ig,i],flux[ig,i],_extra=e)
-    for t = 0,ntemps-1 do re = execute('p = plot(tempwav[*,i],'+temps[t]+'[*,i],col=col[t],/ov)')   ;; plot models
+    for t = 0,ntemps-1 do re = execute('p = plot(tempwav[*,i],'+temps[t]+'[*,i],col=col[*,t],/ov)')   ;; plot models
     p = plot(tempwav[*,i],model[*,i],/ov)                                                           ;; plot coadded models
     p = errorplot(objwav[ig,i],flux[ig,i],err[ig,i],'o',/SYM_FILLED,LINESTYLE='',/OV)               ;; plot photometry
     ;; Model parameters
 	yp = 0.80
 	for t = 0,ntemps-1 do begin
 	    lab = text(0.18,yp-t*0.04,label[t,i],/RELATIVE)
-	    txt = text(0.68,yp-t*0.04,temps[t]+': '+coeff[t,i],col=col[t],/RELATIVE)  ;; template contribution
+	    txt = text(0.68,yp-t*0.04,temps[t]+': '+coeff[t,i],col=col[*,t],/RELATIVE)  ;; template contribution
     endfor
     
 	if keyword_set(sav) then if (strupcase(sav) eq 'EPS') then p.save,strtrim(id[i],2)+'.eps' else $

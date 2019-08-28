@@ -44,6 +44,7 @@ PRO plot_qsed, obswav, $
                TEMP = temp, $
                IND = ind, $
                SAV = sav, $
+               SHOW = show, $
                RESTFRAME = restframe      
 
 
@@ -123,11 +124,13 @@ label = transpose([['ID: '+strtrim(id,2)],['$\itz\rm: $'+z],['$\itE(B-V)\rm$: '+
 ;; plot SEDs
 e = {xr:[0.05,30.],yra:[floor(min(flux[where(finite(flux))]))-1.5,ceil(max(flux[where(finite(flux))]))+2.],xlog:1, $
      xtitle:xtitle, ytitle:'$log( \nu \itF\rm_\nu  /  [ erg s^{-1} cm^{-2} ] )$', $
-     nodata:1}
+     nodata:1,buffer:1}
+if keyword_set(show) then e.buffer = 0
+
 for i = 0,nobj-1 do begin
     ;; plot good photometry
     ig = where(bin[*,i],/null)
-    if keyword_set(sav) then p = plot(objwav[ig,i],flux[ig,i],_extra=e,/BUFFER) else $              ;; set plotting window
+    if keyword_set(sav) then p = plot(objwav[ig,i],flux[ig,i],_extra=e) else $              ;; set plotting window
                              p = plot(objwav[ig,i],flux[ig,i],_extra=e)
     for t = 0,ntemps-1 do re = execute('p = plot(tempwav[*,i],'+temps[t]+'[*,i],col=col[*,t],/ov)')   ;; plot models
     p = plot(tempwav[*,i],model[*,i],/ov)                                                           ;; plot coadded models

@@ -56,7 +56,8 @@ PRO read_sed_phot, file, $
 outfile = file
 for i = 0,n_elements(file)-1 do begin
     temp = strsplit(file[i],'/.',/extract)
-    outfile[i] = temp[-3]+'_flux.sav'
+    outfile[i] = temp[where(strmatch(temp,'*part*'),outlen)]+'_flux.sav'
+    if (outlen eq 0) then stop
 endfor
 
 if keyword_set(mask) then begin
@@ -273,7 +274,8 @@ for f = 0,n_elements(file)-1 do begin
            z: 0d, $
            e_z: 0d, $
            zarr: '', $
-           e_zarr: '' $
+           e_zarr: '', $
+           class: '' $
            }
     obs = replicate(obs,ndata)
     
@@ -326,6 +328,9 @@ for f = 0,n_elements(file)-1 do begin
     obs.zarr = zarr
     obs.e_zarr = e_zarr
     
+    ;; SDSS recognized "CLASS"
+    obs.class = data.class
+    
     ;; QUALITY CUTS (goodbye, sweet sources)
     ;; keep sources that...
     
@@ -357,7 +362,10 @@ for f = 0,n_elements(file)-1 do begin
     ;; finally, no duplicate objects in data set!
     if (n_elements(uniq(obs.objid,sort(obs.objid))) ne n_elements(obs)) then begin
         print, 'DUPLICATE SOURCE DETECTED!'
-        ikeep = rem_dup(obs.objid)
+        obsid = obs.objid
+        totbin = total(obs.bin,1)
+        ;; remove duplicate objects, keep sources with most photometry
+        ikeep = rem_dup(obsid,totbin)
         obs = obs[ikeep]
     endif
     

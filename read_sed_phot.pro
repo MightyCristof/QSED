@@ -52,13 +52,18 @@ PRO read_sed_phot, file, $
                    CORR_2MASS = corr_2mass, $
                    MIN_ERR = min_err
 
-
-outfile = file
-for i = 0,n_elements(file)-1 do begin
-    temp = strsplit(file[i],'/.',/extract)
-    outfile[i] = temp[where(strmatch(temp,'*part*'),outlen)]+'_flux.sav'
-    if (outlen eq 0) then stop
-endfor
+nfiles = n_elements(file)
+if (nfiles gt 1) then begin
+    outfile = strarr(nfiles)
+    for i = 0,n_elements(file)-1 do begin
+        temp = strsplit(file[i],'/.',/extract)
+        outfile[i] = temp[-2]+'_flux.sav';temp[where(strmatch(temp,'*part*'),outlen)]+'_flux.sav'
+        outlen=1
+        if (outlen eq 0) then stop
+    endfor
+endif else begin
+    outfile = (strsplit(file,'/.',/extract))[-2]+'_flux.sav'
+endelse
 
 if keyword_set(mask) then begin
     ;; load reject mask
@@ -67,7 +72,7 @@ if keyword_set(mask) then begin
     read_mangle_polygons,wise_mask,allwise
 endif
 
-for f = 0,n_elements(file)-1 do begin
+for f = 0,nfiles-1 do begin
     ;; read data
     data = mrdfits(file[f],1)
     
@@ -102,12 +107,12 @@ for f = 0,n_elements(file)-1 do begin
     mag_vars = ['DERED_U','DERED_G','DERED_R','DERED_I','DERED_Z', $
                 'W1','W2','W3','W4', $
                 'YPETROMAG','J_1PETROMAG','HPETROMAG','KPETROMAG', $
-                'J_M_2MASS','H_M_2MASS','K_M_2MASS', $
+                'J_M_STDAP','H_M_STDAP','K_M_STDAP', $
                 'FUV_MAG','NUV_MAG']
     e_mag_vars = ['MODELMAGERR_u','MODELMAGERR_g','MODELMAGERR_r','MODELMAGERR_i','MODELMAGERR_z', $
                   'W1ERR','W2ERR','W3ERR','W4ERR', $
                   'YPETROMAGERR','J_1PETROMAGERR','HPETROMAGERR','KPETROMAGERR', $
-                  'J_MSIG_2MASS','H_MSIG_2MASS','K_MSIG_2MASS', $
+                  'J_MSIG_STDAP','H_MSIG_STDAP','K_MSIG_STDAP', $
                   'FUV_MAGERR','NUV_MAGERR']
     flux_vars = mag_vars+'_FLUX'
     dered_vars = flux_vars+'_UNRED'
@@ -244,6 +249,18 @@ for f = 0,n_elements(file)-1 do begin
     ;; byte index for good photometry
     bin = flux gt 0. and e_flux gt 0.
 
+    ;; remove 2MASS where UKIDSS is available
+    i2m = where(strmatch(band,'TWOM?'),n2m)
+    iuk = where(strmatch(band,'UK?'),nuk)
+    if (n2m eq 3 and nuk eq 4) then begin
+        iuk = iuk[1:-1]
+        jhk_uk = bin[iuk,*]
+        jhk_2m = bin[i2m,*]
+        irem = where(total(jhk_uk,1) gt 0,nrem)
+        if (nrem gt 0) then jhk_2m[*,irem] = 0
+        bin[i2m,*] = jhk_2m
+    endif
+
     ;; normalize UKIDSS and 2MASS data
     if keyword_set(corr_2mass) then begin
         offset_2mass,band,flux,e_flux,bin
@@ -293,7 +310,7 @@ for f = 0,n_elements(file)-1 do begin
     obs.e_flux = e_flux
     ;; good photometry flag
     obs.bin = bin
-        
+    
     ;; full redshift data set
     ;; (1) ZP     == SDSS DR14 phot-z
     ;; (2) PEAKZ  == XDQSOz (DiPompeo+15)

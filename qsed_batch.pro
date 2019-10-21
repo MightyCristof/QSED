@@ -86,7 +86,7 @@ object = OBJ_NEW('IDL_Savefile', fit_file[0])			;; create IDL object
 vars = object->names()									;; pull variable names
 ivar = where(~strmatch(vars,'BAND') and ~strmatch(vars,'WAVE'),nvars)	;; do not append BAND or WAVE
 temp_vars = 'TEMP_'+vars[ivar]							;; create temporary variables
-temp_dims = [2,1,1,2,2,1,1,1,2,2,1,2,1,1,1]
+temp_dims = [2,1,1,1,2,2,1,1,1,2,2,1,2,1,1,1]
 for i = 0,nvars-1 do re = execute(temp_vars[i]+' = []')
 
 ;; loop over batched output files and append variables

@@ -158,7 +158,7 @@ if keyword_set(flux_in) then begin
 endif else begin
 	out_val = dblarr(n_elements(value))							;; assume 0
 	out_err = dblarr(n_elements(value))
-	ig = where(error gt 0 and value ne -9999.,gct)				;; good input mag
+	ig = where(error gt 0 and value gt -99.,gct)				;; good input mag
 	if (gct gt 0.) then begin
 		out_val[ig] = f0 * 10.^((m0-value[ig])/2.5) * 10.^6							;; calculate flux for all good input
 		out_err[ig] = sqrt((f0e/f0)^2+((error[ig]*out_val[ig]*alog(10.))/2.5)^2)	;; output error

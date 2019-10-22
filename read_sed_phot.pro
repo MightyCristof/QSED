@@ -311,6 +311,15 @@ for f = 0,nfiles-1 do begin
     ;; good photometry flag
     obs.bin = bin
     
+    ;; 2MASS photometry quality flags 'ABC' for reliable data
+    if (n2m eq 3) then begin
+        qual = strtrim(data.ph_qual_2,2)
+        qual = transpose([[strmatch(strmid(qual,0,1),'[ABC]')],[strmatch(strmid(qual,1,1),'[ABC]')],[strmatch(strmid(qual,2,1),'[ABC]')]])
+        bin2m = bin[i2m,*]
+        bin2m[where(qual eq 0,/null)] = 0
+        bin[i2m,*] = bin2m
+    endif
+    
     ;; full redshift data set
     ;; (1) ZP     == SDSS DR14 phot-z
     ;; (2) PEAKZ  == XDQSOz (DiPompeo+15)

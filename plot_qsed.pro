@@ -104,8 +104,8 @@ err *= 1e-29 * objnu
 flux *= 1e-29 * objnu
 ;; reconstruct models
 ;; convert models from flux density [microjansky] to flux [erg/s/cm2]
-agn = 1e-29 * tempnu * (coeff[0,*]##comp.(where(strmatch(tag_names(comp),'AGN*')))) * 10.^(-0.4 * comp.kap # ebv)                         ;; AGN model
-for i = 1,ntemps-1 do re = execute(temps[i]+' = 1e-29 * tempnu * (coeff[i,*]##comp.'+temps[i]+')')  ;; galaxy models
+for i = 0,ntemps-1 do re = execute(temps[i]+' = 1e-29 * tempnu * (coeff[i,*]##comp.'+temps[i]+')')  ;; construct models
+agn *= 10.^(-0.4 * comp.kap # ebv)                                                                  ;; add AGN extinction
 re = execute('model = '+strjoin(temps,"+"))                                                         ;; coadded models
 
 ;; convert to log scale
@@ -130,8 +130,7 @@ if keyword_set(show) then e.buffer = 0
 for i = 0,nobj-1 do begin
     ;; plot good photometry
     ig = where(bin[*,i],/null)
-    if keyword_set(sav) then p = plot(objwav[ig,i],flux[ig,i],_extra=e) else $              ;; set plotting window
-                             p = plot(objwav[ig,i],flux[ig,i],_extra=e)
+    p = plot(objwav[ig,i],flux[ig,i],_extra=e)                                     ;; set plotting window
     for t = 0,ntemps-1 do re = execute('p = plot(tempwav[*,i],'+temps[t]+'[*,i],col=col[*,t],/ov)')   ;; plot models
     p = plot(tempwav[*,i],model[*,i],/ov)                                                           ;; plot coadded models
     p = errorplot(objwav[ig,i],flux[ig,i],err[ig,i],'o',/SYM_FILLED,LINESTYLE='',/OV)               ;; plot photometry

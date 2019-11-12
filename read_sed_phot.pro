@@ -49,7 +49,6 @@ PRO read_sed_phot, file, $
 	               MASK = mask, $
                    DERED = dered, $
                    FORCED_PHOT = forced_phot, $
-                   ;CORR_2MASS = corr_2mass, $
                    MIN_ERR = min_err
 
 nfiles = n_elements(file)
@@ -260,21 +259,6 @@ for f = 0,nfiles-1 do begin
         if (nrem gt 0) then jhk_2m[*,irem] = 0
         bin[i2m,*] = jhk_2m
     endif
-
-    ;; normalize UKIDSS and 2MASS data
-    ;if keyword_set(corr_2mass) then begin
-    ;    offset_2mass,band,flux,e_flux,bin
-    ;    ;; remove observations that fail S/N cut
-    ;    sn = flux/e_flux
-    ;    isn = where(finite(sn) and sn ge 3.,complement=ibadsn,ncomplement=nbad)
-    ;    if (nbad gt 0) then begin
-    ;        flux[ibadsn] = 0.
-    ;        e_flux[ibadsn] = 0.
-    ;        mag[ibadsn] = -9999.
-    ;        e_mag[ibadsn] = -9999.
-    ;    endif
-    ;    bin[ibadsn] = 0
-    ;endif    
     
     ;; SOURCE DATA FILL
     ;; output data structure	

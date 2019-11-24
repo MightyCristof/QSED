@@ -23,7 +23,7 @@
 ;   obs				- Structure containing all data for SED modeling. Subject to change!
 ;                     Common contents include: Object ID, position+error, mag+error, 
 ;                     flux+error, good photometry flag (bin), redshift+error, string
-;                     containing all redshift+error from multiple sources (zarr+e_zarr).
+;                     containing all redshift+error from multiple sources (zall+zall_err).
 ;   band			- Array of central wavelength for photometric data. 
 ;   
 ; OPTIONAL OUTPUTS:
@@ -273,9 +273,9 @@ for f = 0,nfiles-1 do begin
            e_flux: dblarr(nbands), $
            bin: bytarr(nbands), $
            z: 0d, $
-           e_z: 0d, $
-           zarr: '', $
-           e_zarr: '', $
+           zerr: 0d, $
+           zall: '', $
+           e_zall: '', $
            class: '' $
            }
     obs = replicate(obs,ndata)
@@ -311,10 +311,10 @@ for f = 0,nfiles-1 do begin
     ;; (4) Z_SUPP == Reyes+08, Lacy+13, Hainline+14, Yuan+16
     zstr = ['zp','peakz','zs','z_zsupp']
     e_zstr = ['zperr','peakfwhm','zserr','cat_zsupp']	;; on (4) returns source catalog
-    zarr = strarr(ndata)			;; all redshift data
-    e_zarr = strarr(ndata)			;; all redshift error data
+    zall = strarr(ndata)			;; all redshift data
+    e_zall = strarr(ndata)			;; all redshift error data
     z = dblarr(ndata)				;; "best" redshift value
-    e_z = dblarr(ndata)				;; "best" redshift error value
+    zerr = dblarr(ndata)			;; "best" redshift error value
     ;; trust SDSS photometric redshifts only where reliable; -1 <= photoerrorclass <= 3 (photoerrorclass == 1 is best match)
     iphotz = where(data.photoerrorclass ge -1 and data.photoerrorclass lt 3,complement=badz,ncomplement=nbadz)
     if (nbadz gt 0) then data[badz].zp = -9999.
@@ -322,21 +322,21 @@ for f = 0,nfiles-1 do begin
     for i = 0,n_elements(zstr)-1 do begin
         re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0.,zlen)')
         if (zlen gt 0.) then begin
-            re = execute('zarr[iz] += strtrim(data[iz].'+zstr[i]+',2)')
+            re = execute('zall[iz] += strtrim(data[iz].'+zstr[i]+',2)')
             re = execute('z[iz] = data[iz].'+zstr[i])
-            re = execute('e_zarr[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
-            if (e_zstr[i] ne 'cat_zsupp') then re = execute('e_z[iz] = data[iz].'+e_zstr[i]) else $
-                                               e_z[iz] = -9999.
+            re = execute('e_zall[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
+            if (e_zstr[i] ne 'cat_zsupp') then re = execute('zerr[iz] = data[iz].'+e_zstr[i]) else $
+                                               zerr[iz] = -9999.
         endif
-        zarr += ','
-        e_zarr += ','
+        zall += ','
+        e_zall += ','
     endfor
     
     ;; finalized source redshift information
     obs.z = z
-    obs.e_z = e_z
-    obs.zarr = zarr
-    obs.e_zarr = e_zarr
+    obs.zerr = zerr
+    obs.zall = zall
+    obs.e_zall = e_zall
     
     ;; SDSS recognized "CLASS"
     obs.class = data.class

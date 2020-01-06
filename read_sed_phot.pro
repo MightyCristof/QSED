@@ -355,6 +355,13 @@ for f = 0,nfiles-1 do begin
     if (ct eq 0) then continue
     obs = obs[ikeep]
     
+    ;; ...have redshifts within specified range (phot-z ≤ 0.6; spec-z ≤ 1.0)
+    ztype = zorig(obs.zall)
+    iizs = strmatch(ztype,'ZS*') and obs.z le 1.0
+    iizp = strmatch(ztype,'ZP') and obs.z le 0.6
+    ikeep = where(iizs or iizp,ct)
+    if (ct gt 0) then obs = obs[ikeep]
+    
     ;; ...have a minimum number of 7 photometric bands
     ikeep = where(total(obs.bin,1) ge 7,ct)
     if (ct eq 0) then continue 

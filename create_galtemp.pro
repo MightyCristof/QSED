@@ -184,7 +184,7 @@ match,instr,bp_names,ibp,iinstr															;; match BP to desired instruments
 bp_names = bp_names[iinstr]
 
 ;; bandpass frequency bins necessary for convolution
-tempwav = wave # (1+ztemp)				;; wavelength x redshift
+tempwav = wav # (1+ztemp)				;; wavelength x redshift
 nu = !const.c/(tempwav*1e-6)			;; frequency x redshift
 dnu = nu[0:-2,*]-nu[1:-1,*]				;; frequency bins
 dnu = [dnu,dnu[-1,*]]					;; match previous dimensions (shouldn't ever play a part in convolution process)

@@ -184,7 +184,7 @@ match,instr,bp_names,ibp,iinstr															;; match BP to desired instruments
 bp_names = bp_names[iinstr]
 
 ;; bandpass frequency bins necessary for convolution
-tempwav = wav # (1+ztemp)				;; wavelength x redshift
+tempwav = wave # (1+ztemp)				;; wavelength x redshift
 nu = !const.c/(tempwav*1e-6)			;; frequency x redshift
 dnu = nu[0:-2,*]-nu[1:-1,*]				;; frequency bins
 dnu = [dnu,dnu[-1,*]]					;; match previous dimensions (shouldn't ever play a part in convolution process)
@@ -196,8 +196,8 @@ foreach instr, bp_names do begin
 	re = execute('nbands = n_tags('+instr+')')				;; # of filters in instr
 	for band = 0,nbands-1 do begin
 		thru = dblarr(tlen,zlen)							;; throughput array
-		for z = 0,zlen-1 do re = execute('thru[*,z] = interpol('+instr+'.(band).thru,'+instr+'.(band).wav,tempwav[*,z])')	;; step through each redshift and interpolate
-		re = execute('mm = minmax('+instr+'.(band).wav)') 	;; determine the upper and lower bounds of throughput from wavelength
+		for z = 0,zlen-1 do re = execute('thru[*,z] = interpol('+instr+'.(band).thru,'+instr+'.(band).wave,tempwav[*,z])')	;; step through each redshift and interpolate
+		re = execute('mm = minmax('+instr+'.(band).wave)') 	;; determine the upper and lower bounds of throughput from wavelength
 		ibounds = where(tempwav lt mm[0] or tempwav gt mm[1], /null)		;; find indices where template is out of bounds
 		thru[ibounds] = 0.									;; clear values beyond wavelength boundaries
 		thru[where(thru lt 0.,/null)] = 0.					;; ensure no negative throughput values (sanity check)

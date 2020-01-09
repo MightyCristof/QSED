@@ -20,10 +20,10 @@
 ;  
 ; COMMENTS:
 ;	Bandpass files must be in a format recognized by READCOL, with the first two
-;	columns being wavelength and throughput. Prefixed files with numbers in ascending 
-;	order will ensure that FILT# is sorting by wavelength coverage (short -> long).
+;	columns being waveelength and throughput. Prefixed files with numbers in ascending 
+;	order will ensure that FILT# is sorting by waveelength coverage (short -> long).
 ;
-;	Note: Bandpass files from different instruments may have differing wavelength  
+;	Note: Bandpass files from different instruments may have differing waveelength  
 ;	units. Please be sure input files are in the units you need!
 ;
 ;	Technically, BP is a structure of arrays of structures. See the example below.
@@ -44,9 +44,9 @@
 ;	Examine SDSS1 (u-band):
 ;	IDL> help, sdss.filt1, /st
 ;		** Structure <300b838>, 2 tags, length=16, data length=16, refs=6:
-;  		WAV             DOUBLE          0.29800000
+;  		wave             DOUBLE          0.29800000
 ;  		THRU            DOUBLE           0.0000000
-;	IDL> help, sdss.filt1.wav
+;	IDL> help, sdss.filt1.wave
 ;		<Expression>    DOUBLE    = Array[47]
 ;	IDL> help, sdss.filt1.thru
 ;		<Expression>    DOUBLE    = Array[47]
@@ -61,20 +61,20 @@ FUNCTION create_bp, files
 
 nfilt = n_elements(files)
 
-;; create IDL structure for filter containing wavelength and throughput
-filt = {wav:0d, $
+;; create IDL structure for filter containing waveelength and throughput
+filt = {wave:0d, $
 		thru:0d}
 ;; output string array to concatenate instrument bandpass for RETURN
 filt_out = !NULL
 
 ;; loop over files/filters
 for i = 0,nfilt-1 do begin
-	readcol,files[i],wav,thru,format='d,d',/silent		;; files should contain wavelength,throughput in columns 1,2
-	iw = sort(wav)										;; ensure ascending wavelength
+	readcol,files[i],wave,thru,format='d,d',/silent		;; files should contain waveelength,throughput in columns 1,2
+	iw = sort(wave)										;; ensure ascending waveelength
 	thru = thru[iw]						
-	wav = wav[iw]
-	re = execute('filt'+strtrim(i+1,2)+' = replicate(filt,n_elements(wav))')	;; replicate unique filter and fill 
-	re = execute('filt'+strtrim(i+1,2)+'.wav = wav')
+	wave = wave[iw]
+	re = execute('filt'+strtrim(i+1,2)+' = replicate(filt,n_elements(wave))')	;; replicate unique filter and fill 
+	re = execute('filt'+strtrim(i+1,2)+'.wave = wave')
 	re = execute('filt'+strtrim(i+1,2)+'.thru = thru')
 	filt_out = [filt_out,'filt'+strtrim(i+1,2)+':filt'+strtrim(i+1,2)]			;; add unique filter name to output string
 endfor

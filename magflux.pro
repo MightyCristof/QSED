@@ -36,6 +36,7 @@
 ;   IRAC     http://irsa.ipac.caltech.edu/data/SPITZER/docs/irac/iracinstrumenthandbook/17/
 ;   FLAMEX   ---
 ;   GALEX    http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?mode=browse&gname=GALEX
+;            https://www.aanda.org/articles/aa/pdf/2016/12/aa27782-15.pdf  Effective Area == Transmittance
 ;   HSC      https://www.naoj.org/Observing/Instruments/HSC/sensitivity.html
 ;   PACS     http://svo2.cab.inta-csic.es/svo/theory/fps/index.php?id=Herschel/
 ;	SPIRE	 http://svo2.cab.inta-csic.es/svo/theory/fps/index.php?mode=browse&gname=Herschel&gname2=SPIRE

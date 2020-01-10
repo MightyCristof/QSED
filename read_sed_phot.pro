@@ -274,8 +274,9 @@ for f = 0,nfiles-1 do begin
            bin: bytarr(nbands), $
            z: 0d, $
            zerr: 0d, $
+           ztype:'', $
            zall: '', $
-           e_zall: '', $
+           zallerr: '', $
            class: '' $
            }
     obs = replicate(obs,ndata)
@@ -312,7 +313,7 @@ for f = 0,nfiles-1 do begin
     zstr = ['zp','peakz','zs','z_zsupp']
     e_zstr = ['zperr','peakfwhm','zserr','cat_zsupp']	;; on (4) returns source catalog
     zall = strarr(ndata)			;; all redshift data
-    e_zall = strarr(ndata)			;; all redshift error data
+    zallerr = strarr(ndata)			;; all redshift error data
     z = dblarr(ndata)				;; "best" redshift value
     zerr = dblarr(ndata)			;; "best" redshift error value
     ;; trust SDSS photometric redshifts only where reliable; -1 <= photoerrorclass <= 3 (photoerrorclass == 1 is best match)
@@ -324,19 +325,21 @@ for f = 0,nfiles-1 do begin
         if (zlen gt 0.) then begin
             re = execute('zall[iz] += strtrim(data[iz].'+zstr[i]+',2)')
             re = execute('z[iz] = data[iz].'+zstr[i])
-            re = execute('e_zall[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
+            re = execute('zallerr[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
             if (e_zstr[i] ne 'cat_zsupp') then re = execute('zerr[iz] = data[iz].'+e_zstr[i]) else $
                                                zerr[iz] = -9999.
         endif
         zall += ','
-        e_zall += ','
+        zallerr += ','
     endfor
+    ztype = zorig(zall)
     
     ;; finalized source redshift information
     obs.z = z
     obs.zerr = zerr
+    obs.ztype = ztype
     obs.zall = zall
-    obs.e_zall = e_zall
+    obs.zallerr = zallerr
     
     ;; SDSS recognized "CLASS"
     obs.class = data.class
@@ -356,9 +359,8 @@ for f = 0,nfiles-1 do begin
     obs = obs[ikeep]
     
     ;; ...have redshifts within specified range (phot-z ≤ 0.6; spec-z ≤ 1.0)
-    ztype = zorig(obs.zall)
-    iizs = strmatch(ztype,'ZS*') and obs.z le 1.0
-    iizp = strmatch(ztype,'ZP') and obs.z le 0.6
+    iizs = strmatch(obs.ztype,'ZS*') and obs.z le 1.0
+    iizp = strmatch(obs.ztype,'ZP') and obs.z le 0.6
     ikeep = where(iizs or iizp,ct)
     if (ct gt 0) then obs = obs[ikeep]
     

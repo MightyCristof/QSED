@@ -32,7 +32,7 @@ PRO qsed_batch, files
 
 
 ;; load template grid variables
-load_gt,'galtemp_*.sav'
+load_gt,'galtemp_ebv90.sav'
 ;load_gt,'galtemp_*.sav',/push
 
 ;; create runtime directory

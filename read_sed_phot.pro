@@ -298,7 +298,7 @@ for f = 0,nfiles-1 do begin
     
     ;; 2MASS photometry quality flags 'ABC' for reliable data
     if (n2m eq 3) then begin
-        qual = strtrim(data.ph_qual_2,2)
+        qual = strtrim(data.ph_qual_2mass,2)
         qual = transpose([[strmatch(strmid(qual,0,1),'[ABC]')],[strmatch(strmid(qual,1,1),'[ABC]')],[strmatch(strmid(qual,2,1),'[ABC]')]])
         bin2m = bin[i2m,*]
         bin2m[where(qual eq 0,/null)] = 0

@@ -30,7 +30,8 @@
 ;   Photometric corrections from:
 ;   
 ;   SDSS     http://classic.sdss.org/dr7/algorithms/fluxcal.html
-;   2MASS    http://www.ipac.caltech.edu/2mass/releases/allsky/doc/sec6_4a.html
+;   2MASS    https://iopscience.iop.org/article/10.1086/376474
+;            http://www.ipac.caltech.edu/2mass/releases/allsky/doc/sec6_4a.html
 ;   UKIDSS   http://www.ukidss.org/technical/photom/hewett-ukidss.pdf
 ;   WISE     http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec4_4h.html#WISEZMA
 ;   IRAC     http://irsa.ipac.caltech.edu/data/SPITZER/docs/irac/iracinstrumenthandbook/17/
@@ -85,16 +86,19 @@ case strupcase(band) of
 	'SDSS4': break
     'SDSS5': m0 = -0.02 
     'TWOM1': begin
-    	f0 = 1594.
-        f0e = 27.8
+    	;f0 = 1594.
+        ;f0e = 27.8
+    	m0 = -0.91+0.001
     	end
     'TWOM2': begin
-        f0 = 1024.
-        f0e = 20.
+        ;f0 = 1024.
+        ;f0e = 20.
+        m0 = -1.39-0.019
         end
     'TWOM3': begin
-        f0 = 666.7
-        f0e = 12.6
+        ;f0 = 666.7
+        ;f0e = 12.6
+        m0 = -1.85+0.017
         end
     'UK1': m0 = -0.634
     'UK2': m0 = -0.938

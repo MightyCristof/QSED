@@ -85,25 +85,26 @@ fit_file = file_search('fits-*')						;; name of all batched output files
 object = OBJ_NEW('IDL_Savefile', fit_file[0])			;; create IDL object
 vars = object->names()									;; pull variable names
 ivar = where(~strmatch(vars,'BAND') and ~strmatch(vars,'WAVE'),nvars)	;; do not append BAND or WAVE
-temp_vars = 'TEMP_'+vars[ivar]							;; create temporary variables
-temp_dims = [2,1,1,1,2,2,1,1,1,2,2,1,2,1,1,1]
-for i = 0,nvars-1 do re = execute(temp_vars[i]+' = []')
+temp_var = 'TEMP_'+vars[ivar]							;; create temporary variables
+temp_dim = intarr(nvars)
+for i = 0,nvars-1 do re = execute(temp_var[i]+' = []')
 
 ;; loop over batched output files and append variables
 for i = 0,n_elements(fit_file)-1 do begin
 	restore, fit_file[i]
-	for j = 0,nvars-1 do begin
+	if (i eq 0) then for j = 0,nvars-1 do re = execute('temp_dim[j] = size('+vars[ivar[j]]+',/n_dim)')
+	for k = 0,nvars-1 do begin
 		;; match dimensions of output array
-		dim = temp_dims[j]
+		dim = temp_dim[k]
 		case dim of
-		    0: re = execute(temp_vars[j]+' = ['+temp_vars[j]+','+vars[ivar[j]]+']')
-			1: re = execute(temp_vars[j]+' = ['+temp_vars[j]+','+vars[ivar[j]]+']')
-			2: re = execute(temp_vars[j]+' = [['+temp_vars[j]+'],['+vars[ivar[j]]+']]')
+		    0: re = execute(temp_var[k]+' = ['+temp_var[k]+','+vars[ivar[k]]+']')
+			1: re = execute(temp_var[k]+' = ['+temp_var[k]+','+vars[ivar[k]]+']')
+			2: re = execute(temp_var[k]+' = [['+temp_var[k]+'],['+vars[ivar[k]]+']]')
 		endcase
 	endfor
 endfor
 ;; restore variables to original names
-for i = 0,nvars-1 do re = execute(vars[ivar[i]]+' = '+temp_vars[i])
+for i = 0,nvars-1 do re = execute(vars[ivar[i]]+' = '+temp_var[i])
 ;; save concatenated SED modeling variables in top directory
 popd
 re = execute('save,'+strjoin(vars,",")+',/compress,file="fits.sav"')

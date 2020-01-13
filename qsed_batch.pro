@@ -28,11 +28,12 @@
 ; REVISION HISTORY:
 ;   2017-Feb-17  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-PRO qsed_batch, files
+PRO qsed_batch, files, $
+                galtemp
 
 
 ;; load template grid variables
-load_gt,'galtemp_ebv90.sav'
+load_gt, galtemp
 ;load_gt,'galtemp_*.sav',/push
 
 ;; create runtime directory

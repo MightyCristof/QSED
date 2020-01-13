@@ -368,7 +368,13 @@ for f = 0,nfiles-1 do begin
     ikeep = where(total(obs.bin,1) ge 7,ct)
     if (ct eq 0) then continue 
     obs = obs[ikeep]
-        
+    
+    ;; ...have detections in all four WISE bands
+    iwise = where(strmatch(band,'WISE?'),ct)
+    if (ct eq 0) then continue
+    ikeep = where(total(obs.bin[iwise],1) eq 4,ct)
+    if (ct gt 0) then obs = obs[ikeep]
+    
     ;; ...aren't in the mask
     if keyword_set(mask) then begin
         euler,obs.ra,obs.dec,gal_l,gal_b,1

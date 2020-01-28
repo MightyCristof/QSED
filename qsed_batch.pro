@@ -76,7 +76,12 @@ for i = 0,n_elements(files)-1 do begin
 		sav_str = sky_str+'-'+string(b,format='(I02)')
 		nleft = nleft-bsize > 0								;; track the remaining number of sources
 		batch_obs = obs[b*bsize:(b+1)*bsize-1 < (nobj-1)]	;; temporary data structure
-		qsed_zs_multi,batch_obs,band,sav_str				;; call SED modeling procedure
+		sed_out = qsed_fit(batch_obs,band)				    ;; call SED modeling procedure -> converted to function for bootstrapping purposes
+		sed_vars = ['PARAM','BAND','WAVE',tag_names(sed_out.obj_data)]	
+		sed_path = ['SED_OUT.'+['PARAM','BAND','WAVE'],'SED_OUT.OBJ_DATA.'+tag_names(sed_out.obj_data)]
+		for v = 0,n_elements(sed_vars)-1 do re = execute(sed_vars[v]+' = '+sed_path[v])
+		sed_str = strjoin(sed_vars,',')
+		re = execute('save,'+sed_str+',/compress,file="fits-"+sav_str+".sav"')
 	endfor	
 endfor
 ;toc

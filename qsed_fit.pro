@@ -1,5 +1,5 @@
 ;-----------------------------------------------------------------------------------------
-; NAME:                                                                      IDL Procedure
+; NAME:                                                                       IDL Function
 ;	qsed_zs_multi
 ;
 ; PURPOSE:
@@ -10,7 +10,6 @@
 ; INPUTS:
 ;	phot			- Input IDL structure of source photometry and data.
 ;   filts			- String array of photometric filters, matched to phot.
-;	suffx			- String to append to output filename.
 ;	
 ; OPTIONAL INPUTS:
 ;   
@@ -40,21 +39,22 @@
 ; REVISION HISTORY:
 ;   2016-Aug-24  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-PRO qsed_zs_multi, phot, $
-				   filts, $
-				   suffx
+FUNCTION qsed_fit, phot, $
+				   filts
 
 					
 ;; load object data
-phot_tags = tag_names(phot)
+obj_vars = tag_names(phot)
 ;; extract photometry variables
-for i = 0,n_elements(phot_tags)-1 do re = execute(phot_tags[i]+' = phot.'+phot_tags[i])
+for i = 0,n_elements(obj_vars)-1 do re = execute(obj_vars[i]+' = phot.'+obj_vars[i])
 
 ;; load template data
 common _galtemp
 temp_vars = scope_varname(common='_galtemp')
 
-;; degrees of freedom: color and redshift
+;; modeling variables
+fit_vars = ['PARAM','BAND','WAVE']
+;; degrees of freedom - color and redshift
 cdof = 1
 zdof = 0
 
@@ -95,7 +95,7 @@ for i = 0,nobj-1 do begin
 	chi = ndx2(rebin(obj_flux,blen,clen,1,csz[-1]),rebin(obj_e_flux,blen,clen,1,csz[-1]),total(rebin(tmp[iband,*,i,*],blen,clen,1,numt,csz[-1])*rebin(reform(coeff,1,clen,1,numt,csz[-1]),blen,clen,1,numt,csz[-1]),4),d=1)
 	;; ensure there is at least one positive template coefficient
 	ipos = where(total(coeff gt 0.,3),poslen)
-	if (poslen gt 0) then !NULL = min(chi[ipos]/dof[ipos],imin) else stop
+	if (poslen gt 0) then !NULL = min(abs(chi[ipos]/dof[ipos]-1.),imin) else stop
 	;; find minimum chi-square
 	ind = array_indices(chi,ipos[imin])
 	;; fill best-fit array
@@ -103,20 +103,37 @@ for i = 0,nobj-1 do begin
 endfor
 ;toc
 
-;; where AGN coefficient set to zero and best fit, ensure E(B-V) is 0
+;; where negative AGN coefficient was set to zero, also set E(B-V) to zero
 param[0,where(param[2,*] eq 0.,/NULL)] = 0.
 
-;; save modeling parameters
-sav_vars = ['PARAM','BAND','WAVE',phot_tags]
-sav_str = strjoin(sav_vars,',')
-;re = execute('save,'+sav_vars+',/compress,file="fits_"+date_str')
-if (n_elements(suffx) eq 0) then suffx = '.sav' else suffx = '-'+suffx+'.sav'
-re = execute('save,'+sav_str+',/compress,file="fits"+suffx')
+;; combine and output modeling parameters and object data
+fit_str = strjoin(fit_vars+':'+fit_vars,',')
+obj_str = strjoin(obj_vars+":"+obj_vars,",")
+re = execute('obj_data = soa2aos({'+obj_str+'})')
+re = execute('sed_out = {'+fit_str+',obj_data:obj_data}')
+
+return, sed_out
 
 
 END
 
 
 
+
+
+
+
+
+
+
+;; from when i was but a lowly procedure...
+
+;; save modeling parameters
+;sav_vars = ['PARAM','BAND','WAVE',obj_vars]
+;sav_str = strjoin(sav_vars,',')
+
+;re = execute('save,'+sav_vars+',/compress,file="fits_"+date_str')
+;if (n_elements(suffx) eq 0) then suffx = '.sav' else suffx = '-'+suffx+'.sav'
+;re = execute('save,'+sav_str+',/compress,file="fits"+suffx')
 
 

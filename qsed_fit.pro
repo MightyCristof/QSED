@@ -95,7 +95,7 @@ for i = 0,nobj-1 do begin
 	chi = ndx2(rebin(obj_flux,blen,clen,1,csz[-1]),rebin(obj_e_flux,blen,clen,1,csz[-1]),total(rebin(tmp[iband,*,i,*],blen,clen,1,numt,csz[-1])*rebin(reform(coeff,1,clen,1,numt,csz[-1]),blen,clen,1,numt,csz[-1]),4),d=1)
 	;; ensure there is at least one positive template coefficient
 	ipos = where(total(coeff gt 0.,3),poslen)
-	if (poslen gt 0) then !NULL = min(abs(chi[ipos]/dof[ipos]-1.),imin) else stop
+	if (poslen gt 0) then !NULL = min(abs(1.-chi[ipos]/dof[ipos]),imin) else stop
 	;; find minimum chi-square
 	ind = array_indices(chi,ipos[imin])
 	;; fill best-fit array

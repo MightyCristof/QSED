@@ -1,6 +1,6 @@
 ;-----------------------------------------------------------------------------------------
 ; NAME:                                                                      IDL Procedure
-;	qsed_bootstrap
+;	qsed_resamp
 ;
 ; PURPOSE:
 ;	Batch large samples of sources for call to qsed_zs_multi, and combine output.
@@ -28,10 +28,10 @@
 ; REVISION HISTORY:
 ;   2017-Feb-17  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-PRO qsed_bootstrap, files, $
-                    galtemp, $
-                    niter, $
-                    TEST = test
+PRO qsed_resamp, files, $
+                 galtemp, $
+                 niter, $
+                 TEST = test
 
 
 ;; load template grid variables
@@ -75,6 +75,10 @@ date_str = string(y, format='(I4.2)') + $
 
     if keyword_set(test) then nobj = test
     ebv_sigm = dblarr(8,nobj)
+
+    ;; boolean for bad fits
+    bad_fit = bytarr(nobj)
+
 	;; iterate over each object
 	for i = 0,nobj-1 do begin
 	    ;; pull and replicate individual source
@@ -93,32 +97,40 @@ date_str = string(y, format='(I4.2)') + $
 	    for v = 0,n_elements(fit_vars)-1 do re = execute(fit_vars[v]+' = SED_OUT.'+fit_vars[v])
 	    obj_vars = tag_names(sed_out.obj_data)
 	    obj_data = sed_out.obj_data
-        ;; best-fit == closest reduced chi-square to 1
-        rchi = param[-2,*]/param[-1,*]
-        rchi_best = min(abs(rchi-1.),ibest)
-        
+
         ;; construct full SED output array for all objects
         if (i eq 0) then begin
-            param_nobj = dblarr(n_elements(param[*,ibest]),nobj)
+            param_nobj = dblarr(n_elements(param[*,0]),nobj)
             band_nobj = band
             wave_nobj = wave
-            obj_data_nobj = replicate(obj_data[ibest],nobj)
+            obj_data_nobj = replicate(obj_data[0],nobj)
         endif
         
+        ;; remove outliers
+        resistant_mean,param[0,*],5.,mn,sigmn,nrej,goodvec=ig
+        ;; if resistant mean cannot be found, flag source and pick best-fit chi-square
+        if (nrej eq niter) then begin
+            bad_fit[i] = 1
+            min_chi = min(param[-2,*]/param[-1,*],ibest)
+            param_nobj[*,i] = param[*,ibest]
+            obj_data_nobj[i] = obj_data[ibest]
+        endif else begin
+        ebv = param[0,ig]
+        rchi = param[-2,ig]/param[-1,ig]
+        
+        !NULL = min(abs(mn-ebv),ibest)
+        best_ebv = ebv[ibest]
+
+        ;; find closes E(B-V) to mean with best chi-square       
+        iiebv = ebv eq best_ebv
+        ibest = where(iiebv,nebv)
+        if (nebv ne 1) then ibest = ibest[where(iiebv[ibest] and rchi[ibest] eq min(rchi[ibest]),nbest)]
+        if (nbest ne 1) then stop
         ;; best-fit SED for each object        
         param_nobj[*,i] = param[*,ibest]
         obj_data_nobj[i] = obj_data[ibest]
-
-        ebv_sigm[0,i] = param[0,ibest]
-        ebv_sigm[1:2,i] = (moment(param[0,*]))[0:1]	    ;; Bootstrap MEAN and STDDEV
-        ebv_sigm[3,i] = median(param[0,*])              ;; Bootstrap MEDIAN
-        resistant_mean,param[0,*],3.0,mn,sigmn,nrej,goodvec=ig
-        ebv_sigm[4:5,i] = (moment(param[0,ig]))[0:1]    ;; Bootstrap RESISTANT MEAN and STDDEV
-        ebv_sigm[6,i] = median(param[0,ig])             ;; Bootstrap RESISTANT MEDIAN
-        !NULL = min(abs(median(param[0,ig])-param[0,ig]),imin)
-        ebv_sigm[7,i] = rchi[imin]
+        endelse
     endfor
-    save,ebv_sigm,file='ebv_sigm.sav'
 ;endfor
 
 ;; restore variables to original names
@@ -126,7 +138,7 @@ param = param_nobj
 for v = 0,n_elements(obj_vars)-1 do re = execute(obj_vars[v]+' = obj_data_nobj.'+obj_vars[v])
 ;; save concatenated SED modeling variables in top directory
 popd
-sav_vars = [fit_vars,obj_vars]
+sav_vars = [fit_vars,obj_vars,'BAD_FIT']
 sav_str = strjoin(sav_vars,',')
 re = execute('save,'+sav_str+',/compress,file="fits.sav"')
 

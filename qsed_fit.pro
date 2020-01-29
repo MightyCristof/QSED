@@ -20,7 +20,8 @@
 ;	wave			- Array of central wavelength values, matched phot to template.
 ;
 ; OPTIONAL OUTPUTS:
-;  
+;   FLAT			- Return chi-square closest to 1, instead of absolute minimum.
+;   
 ; COMMENTS:
 ;   It is important to note that this procedure matches the input redshift of a source
 ;	to the template redshift (to the third decimal). This matched redshift is saved
@@ -40,9 +41,10 @@
 ;   2016-Aug-24  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
 FUNCTION qsed_fit, phot, $
-				   filts
+				   filts, $
+				   FLAT = flat
 
-					
+
 ;; load object data
 obj_vars = tag_names(phot)
 ;; extract photometry variables
@@ -95,7 +97,10 @@ for i = 0,nobj-1 do begin
 	chi = ndx2(rebin(obj_flux,blen,clen,1,csz[-1]),rebin(obj_e_flux,blen,clen,1,csz[-1]),total(rebin(tmp[iband,*,i,*],blen,clen,1,numt,csz[-1])*rebin(reform(coeff,1,clen,1,numt,csz[-1]),blen,clen,1,numt,csz[-1]),4),d=1)
 	;; ensure there is at least one positive template coefficient
 	ipos = where(total(coeff gt 0.,3),poslen)
-	if (poslen gt 0) then !NULL = min(abs(1.-chi[ipos]/dof[ipos]),imin) else stop
+	if (poslen gt 0) then begin
+	    if keyword_set(flat) then !NULL = min(abs(flat-chi[ipos]/dof[ipos]),imin) else $
+	                              !NULL = min(chi[ipos]/dof[ipos],imin)
+	endif else stop
 	;; find minimum chi-square
 	ind = array_indices(chi,ipos[imin])
 	;; fill best-fit array

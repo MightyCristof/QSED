@@ -31,7 +31,8 @@
 PRO qsed_resamp, files, $
                  galtemp, $
                  niter, $
-                 TEST = test
+                 TEST = test, $
+                 FLAT = flat
 
 
 ;; load template grid variables
@@ -74,8 +75,9 @@ date_str = string(y, format='(I4.2)') + $
 	nobj = n_elements(obs)						;; number of sources in file
 
     if keyword_set(test) then nobj = test
-    ebv_sigm = dblarr(8,nobj)
-
+    ;; arrays for resampling results
+    ebv_sigm = dblarr(4,nobj)
+    nrej = lonarr(nobj)
     ;; boolean for bad fits
     bad_fit = bytarr(nobj)
 
@@ -92,7 +94,8 @@ date_str = string(y, format='(I4.2)') + $
             this_obs.e_flux[b] = this_err
         endfor
 	    
-	    sed_out = qsed_fit(this_obs,band)
+	    if keyword_set(flat) then sed_out = qsed_fit(this_obs,band,/flat) else $
+	                              sed_out = qsed_fit(this_obs,band)
 	    fit_vars = ['PARAM','BAND','WAVE']
 	    for v = 0,n_elements(fit_vars)-1 do re = execute(fit_vars[v]+' = SED_OUT.'+fit_vars[v])
 	    obj_vars = tag_names(sed_out.obj_data)
@@ -107,30 +110,45 @@ date_str = string(y, format='(I4.2)') + $
         endif
         
         ;; remove outliers
-        resistant_mean,param[0,*],5.,mn,sigmn,nrej,goodvec=ig
-        ;; if resistant mean cannot be found, flag source and pick best-fit chi-square
-        if (nrej eq niter) then begin
+        resistant_mean,param[0,*],5.,mn,sigmn,nr,goodvec=ig
+        nrej[i] = nr
+        stop
+        if (nr eq niter) then begin
+            ;; if resistant mean unsuccessful
+            ;; flag source
             bad_fit[i] = 1
-            min_chi = min(param[-2,*]/param[-1,*],ibest)
-            param_nobj[*,i] = param[*,ibest]
-            obj_data_nobj[i] = obj_data[ibest]
+            ebv = param[0,*]
+            rchi = param[-2,*]/param[-1,*]
+            ;; pick best-fit chi-square
+            if keyword_set(flat) then min_chi = min(abs(1.-rchi),ibest) else $
+                                      min_chi = min(rchi,ibest)
         endif else begin
-        ebv = param[0,ig]
-        rchi = param[-2,ig]/param[-1,ig]
-        
-        !NULL = min(abs(mn-ebv),ibest)
-        best_ebv = ebv[ibest]
-
-        ;; find closes E(B-V) to mean with best chi-square       
-        iiebv = ebv eq best_ebv
-        ibest = where(iiebv,nebv)
-        if (nebv ne 1) then ibest = ibest[where(iiebv[ibest] and rchi[ibest] eq min(rchi[ibest]),nbest)]
-        if (nbest ne 1) then stop
+            ;; if resistant mean successful
+            ebv = param[0,ig]
+            rchi = param[-2,ig]/param[-1,ig]
+            ;; closest E(B-V) to the mean
+            !NULL = min(abs(mn-ebv),iloc)
+            best_ebv = ebv[iloc]
+            ;; find closest realization(s)
+            iiebv = ebv eq best_ebv
+            ibest = where(iiebv,nbest)
+            ;; more than one realization, pick best chi-square
+            if (nbest ne 1) then begin
+                if keyword_set(flat) then !NULL = min(abs(1.-rchi[ibest]),imin) else $
+                                          !NULL = min(rchi[ibest],imin)
+                ibest = ibest[imin]
+                nbest = n_elements(ibest)
+            endif
+            ;; sanity check
+            if (nbest ne 1) then stop
+        endelse
         ;; best-fit SED for each object        
         param_nobj[*,i] = param[*,ibest]
         obj_data_nobj[i] = obj_data[ibest]
-        endelse
+        ;; save E(B-V) bootstrap results
+        ebv_sigm[*,i] = moment(ebv)
     endfor
+save,ebv_sigm,nrej,bad_fit,/compress,file='ebv_sigm.sav'
 ;endfor
 
 ;; restore variables to original names

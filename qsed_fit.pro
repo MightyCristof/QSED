@@ -98,7 +98,7 @@ for i = 0,nobj-1 do begin
 	;; ensure there is at least one positive template coefficient
 	ipos = where(total(coeff gt 0.,3),poslen)
 	if (poslen gt 0) then begin
-	    if keyword_set(flat) then !NULL = min(abs(flat-chi[ipos]/dof[ipos]),imin) else $
+	    if keyword_set(flat) then !NULL = min(abs(1.-chi[ipos]/dof[ipos]),imin) else $
 	                              !NULL = min(chi[ipos]/dof[ipos],imin)
 	endif else stop
 	;; find minimum chi-square

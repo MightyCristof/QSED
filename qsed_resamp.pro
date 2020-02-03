@@ -52,8 +52,9 @@ file_mkdir, fit_dir
 pushd, fit_dir
 
 ;; directory for all batched output file
-file_mkdir, 'bootstrap_output'
-pushd, 'bootstrap_output'
+;; ONLY NECESARRY IF WE ARE ALSO BATCHING LARGE NUMBER OF SOURCES (look at later)
+;file_mkdir, 'bootstrap_output'
+;pushd, 'bootstrap_output'
 
 ;; create date string
 date_str = string(y, format='(I4.2)') + $
@@ -80,6 +81,7 @@ date_str = string(y, format='(I4.2)') + $
     nrej = lonarr(nobj)
     ;; boolean for bad fits
     bad_fit = bytarr(nobj)
+    agn_perc = dblarr(nobj)
 
 	;; iterate over each object
 	for i = 0,nobj-1 do begin
@@ -94,6 +96,7 @@ date_str = string(y, format='(I4.2)') + $
             this_obs.e_flux[b] = this_err
         endfor
 	    
+	    ;; run SED fitting
 	    if keyword_set(flat) then sed_out = qsed_fit(this_obs,band,/flat) else $
 	                              sed_out = qsed_fit(this_obs,band)
 	    fit_vars = ['PARAM','BAND','WAVE']
@@ -109,10 +112,13 @@ date_str = string(y, format='(I4.2)') + $
             obj_data_nobj = replicate(obj_data[0],nobj)
         endif
         
+        ;; record the number of best-fit models not requiring an AGN component
+        !NULL = where(param[2,*] gt 0.,nagn)
+        agn_perc[i] = nagn*1./niter
+        
         ;; remove outliers
         resistant_mean,param[0,*],5.,mn,sigmn,nr,goodvec=ig
         nrej[i] = nr
-        stop
         if (nr eq niter) then begin
             ;; if resistant mean unsuccessful
             ;; flag source
@@ -155,8 +161,7 @@ save,ebv_sigm,nrej,bad_fit,/compress,file='ebv_sigm.sav'
 param = param_nobj
 for v = 0,n_elements(obj_vars)-1 do re = execute(obj_vars[v]+' = obj_data_nobj.'+obj_vars[v])
 ;; save concatenated SED modeling variables in top directory
-popd
-sav_vars = [fit_vars,obj_vars,'BAD_FIT']
+sav_vars = [fit_vars,'AGN_PERC',obj_vars]
 sav_str = strjoin(sav_vars,',')
 re = execute('save,'+sav_str+',/compress,file="fits.sav"')
 

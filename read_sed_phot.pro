@@ -327,7 +327,7 @@ for f = 0,nfiles-1 do begin
             re = execute('z[iz] = data[iz].'+zstr[i])
             re = execute('zallerr[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
             if (e_zstr[i] ne 'cat_zsupp') then re = execute('zerr[iz] = data[iz].'+e_zstr[i]) else $
-                                               zerr[iz] = -9999.
+                                               zerr[iz] = z[iz]*0.05
         endif
         zall += ','
         zallerr += ','
@@ -363,6 +363,11 @@ for f = 0,nfiles-1 do begin
     iizp = strmatch(obs.ztype,'ZP') and obs.z le 0.6
     ikeep = where(iizs or iizp,ct)
     if (ct gt 0) then obs = obs[ikeep]
+    
+    ;; ...have constrained redshift errors
+    ikeep = where(obs.zerr gt 0.,ct)
+    if (ct eq 0) then continue
+    obs = obs[ikeep]
     
     ;; ...have a minimum number of 7 photometric bands
     ikeep = where(total(obs.bin,1) ge 7,ct)

@@ -53,8 +53,8 @@ pushd, fit_dir
 
 ;; directory for all batched output file
 ;; ONLY NECESARRY IF WE ARE ALSO BATCHING LARGE NUMBER OF SOURCES (look at later)
-;file_mkdir, 'bootstrap_output'
-;pushd, 'bootstrap_output'
+;file_mkdir, 'resamp_output'
+;pushd, 'resamp_output'
 
 ;; create date string
 date_str = string(y, format='(I4.2)') + $
@@ -78,6 +78,10 @@ date_str = string(y, format='(I4.2)') + $
     if keyword_set(test) then nobj = test
     ;; arrays for resampling results
     ebv_sigm = dblarr(4,nobj)
+    red_sigm = dblarr(4,nobj)
+    lir_sigm = dblarr(4,nobj)
+    flx_sigm = dblarr(4,nobj)
+    
     nrej = lonarr(nobj)
     ;; boolean for bad fits
     bad_fit = bytarr(nobj)
@@ -89,12 +93,14 @@ date_str = string(y, format='(I4.2)') + $
 	    this_obs = replicate(obs[i],niter)
 	    
 	    nbands = n_elements(band)
-	    ;; resample photometry 
+	    ;; resample input: photometry
         for b = 0,nbands-1 do begin
             this_obs.mag[b] += this_obs.e_mag[b]*randomn(seed,niter)
             this_obs.flux[b] = magflux(this_obs.mag[b],this_obs.e_mag[b],band[b],err=this_err)
             this_obs.e_flux[b] = this_err
         endfor
+	    ;; resample input: redshift
+	    this_obs.z += this_obs.zerr*randomn(seed,niter)
 	    
 	    ;; run SED fitting
 	    if keyword_set(flat) then sed_out = qsed_fit(this_obs,band,/flat) else $
@@ -115,9 +121,9 @@ date_str = string(y, format='(I4.2)') + $
         ;; record the number of best-fit models not requiring an AGN component
         !NULL = where(param[2,*] gt 0.,nagn)
         agn_perc[i] = nagn*1./niter
-        
+        stop
         ;; remove outliers
-        resistant_mean,param[0,*],5.,mn,sigmn,nr,goodvec=ig
+        resistant_mean,param[0,*],3.,mn,sigmn,nr,goodvec=ig
         nrej[i] = nr
         if (nr eq niter) then begin
             ;; if resistant mean unsuccessful
@@ -131,6 +137,11 @@ date_str = string(y, format='(I4.2)') + $
         endif else begin
             ;; if resistant mean successful
             ebv = param[0,ig]
+            red = this_obs[ig].z
+            c_a = param[2,ig]
+            lir = l_agn(6.,ebv,red,c_a,/log)
+            dl2 = dlum(red,/sq)
+            flx = lir-alog10(4.*!const.pi*dl2)
             rchi = param[-2,ig]/param[-1,ig]
             ;; closest E(B-V) to the mean
             !NULL = min(abs(mn-ebv),iloc)
@@ -151,10 +162,13 @@ date_str = string(y, format='(I4.2)') + $
         ;; best-fit SED for each object        
         param_nobj[*,i] = param[*,ibest]
         obj_data_nobj[i] = obj_data[ibest]
-        ;; save E(B-V) bootstrap results
+        ;; input resampling results
         ebv_sigm[*,i] = moment(ebv)
+        red_sigm[*,i] = moment(red)
+        lir_sigm[*,i] = moment(lir)
+        flx_sigm[*,i] = moment(flx)
     endfor
-save,ebv_sigm,nrej,bad_fit,/compress,file='ebv_sigm.sav'
+save,ebv_sigm,red_sigm,lir_sigm,flx_sigm,nrej,bad_fit,/compress,file='resamp_output.sav'
 ;endfor
 
 ;; restore variables to original names

@@ -369,6 +369,11 @@ for f = 0,nfiles-1 do begin
     if (ct eq 0) then continue
     obs = obs[ikeep]
     
+    ;; ...can be resampled in redshift space (redshift cuttoff z == 3)
+    ikeep = where(obs.z+4.*obs.zerr lt 3.,ct)
+    if (ct eq 0.) then continue
+    obs = obs[ikeep]
+    
     ;; ...have a minimum number of 7 photometric bands
     ikeep = where(total(obs.bin,1) ge 7,ct)
     if (ct eq 0) then continue 

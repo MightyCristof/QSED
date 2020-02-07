@@ -30,13 +30,16 @@
 ;-----------------------------------------------------------------------------------------
 PRO qsed_resamp, files, $
                  galtemp, $
+                 comp, $
                  niter, $
+                 IND = ind, $
                  TEST = test, $
                  FLAT = flat
 
 
 ;; load template grid variables
 load_gt, galtemp
+load_comp, comp
 ;load_gt,'galtemp_*.sav',/push
 
 ;; create runtime directory
@@ -73,14 +76,15 @@ date_str = string(y, format='(I4.2)') + $
     f = 0
 	print, 'Fitting: '+files[f]
 	restore,files[f]
-	nobj = n_elements(obs)						;; number of sources in file
 
-    if keyword_set(test) then nobj = test
+    if keyword_set(ind) then obs = obs[ind]
+    if keyword_set(test) then obs = obs[0:test-1]
+	nobj = n_elements(obs)						;; number of sources in file
     ;; arrays for resampling results
-    ebv_sigm = dblarr(4,nobj)
-    red_sigm = dblarr(4,nobj)
-    lir_sigm = dblarr(4,nobj)
-    flx_sigm = dblarr(4,nobj)
+    ebv_sigm = dblarr(2,nobj)
+    red_sigm = dblarr(2,nobj)
+    lir_sigm = dblarr(2,nobj)
+    flx_sigm = dblarr(2,nobj)
     
     nrej = lonarr(nobj)
     ;; boolean for bad fits
@@ -101,6 +105,8 @@ date_str = string(y, format='(I4.2)') + $
         endfor
 	    ;; resample input: redshift
 	    this_obs.z += this_obs.zerr*randomn(seed,niter)
+	    izlo = where(this_obs.z lt 0.,nzlo)
+	    if (nzlo gt 0) then this_obs[izlo].z = 0.
 	    
 	    ;; run SED fitting
 	    if keyword_set(flat) then sed_out = qsed_fit(this_obs,band,/flat) else $
@@ -121,54 +127,40 @@ date_str = string(y, format='(I4.2)') + $
         ;; record the number of best-fit models not requiring an AGN component
         !NULL = where(param[2,*] gt 0.,nagn)
         agn_perc[i] = nagn*1./niter
-        stop
-        ;; remove outliers
-        resistant_mean,param[0,*],3.,mn,sigmn,nr,goodvec=ig
-        nrej[i] = nr
-        if (nr eq niter) then begin
-            ;; if resistant mean unsuccessful
-            ;; flag source
-            bad_fit[i] = 1
-            ebv = param[0,*]
-            rchi = param[-2,*]/param[-1,*]
-            ;; pick best-fit chi-square
-            if keyword_set(flat) then min_chi = min(abs(1.-rchi),ibest) else $
-                                      min_chi = min(rchi,ibest)
-        endif else begin
-            ;; if resistant mean successful
-            ebv = param[0,ig]
-            red = this_obs[ig].z
-            c_a = param[2,ig]
-            lir = l_agn(6.,ebv,red,c_a,/log)
-            dl2 = dlum(red,/sq)
-            flx = lir-alog10(4.*!const.pi*dl2)
-            rchi = param[-2,ig]/param[-1,ig]
-            ;; closest E(B-V) to the mean
-            !NULL = min(abs(mn-ebv),iloc)
-            best_ebv = ebv[iloc]
+        
+        ebv = param[0,*]
+        red = this_obs.z
+        c_a = param[2,*]
+        lir = l_agn(6.,ebv,red,c_a,/log)
+        dl2 = dlum(red,/sq)
+        flx = lir-alog10(4.*!const.pi*dl2)
+        flx[where(lir eq 0.,/null)] = 0.
+        rchi = param[-2,*]/param[-1,*]
+        ;; closest E(B-V) to the mean
+        !NULL = min(abs(median(ebv)-ebv),iloc)
+        best_ebv = ebv[iloc]
             ;; find closest realization(s)
-            iiebv = ebv eq best_ebv
-            ibest = where(iiebv,nbest)
-            ;; more than one realization, pick best chi-square
-            if (nbest ne 1) then begin
-                if keyword_set(flat) then !NULL = min(abs(1.-rchi[ibest]),imin) else $
-                                          !NULL = min(rchi[ibest],imin)
-                ibest = ibest[imin]
-                nbest = n_elements(ibest)
-            endif
-            ;; sanity check
-            if (nbest ne 1) then stop
-        endelse
+        iiebv = ebv eq best_ebv
+        ibest = where(iiebv,nbest)
+        ;; more than one realization, pick best chi-square
+        if (nbest ne 1) then begin
+            if keyword_set(flat) then !NULL = min(abs(1.-rchi[ibest]),imin) else $
+                                      !NULL = min(rchi[ibest],imin)
+            ibest = ibest[imin]
+            nbest = n_elements(ibest)
+        endif
+        ;; sanity check
+        if (nbest ne 1) then stop
         ;; best-fit SED for each object        
         param_nobj[*,i] = param[*,ibest]
         obj_data_nobj[i] = obj_data[ibest]
         ;; input resampling results
-        ebv_sigm[*,i] = moment(ebv)
-        red_sigm[*,i] = moment(red)
-        lir_sigm[*,i] = moment(lir)
-        flx_sigm[*,i] = moment(flx)
+        ebv_sigm[*,i] = [median(ebv),medabsdev(ebv)]
+        red_sigm[*,i] = [median(red),medabsdev(red)]
+        lir_sigm[*,i] = [median(lir),medabsdev(lir)]
+        flx_sigm[*,i] = [median(flx),medabsdev(flx)]        
     endfor
-save,ebv_sigm,red_sigm,lir_sigm,flx_sigm,nrej,bad_fit,/compress,file='resamp_output.sav'
+save,ebv_sigm,red_sigm,lir_sigm,flx_sigm,nrej,bad_fit,/compress,file='resamp_fits.sav'
 ;endfor
 
 ;; restore variables to original names
@@ -193,6 +185,58 @@ END
 ;p = plot(ebv_sigm[0,*],ebv_sigm[4,*],'o',sym_size=0.5,sym_filled=1,color='blue',xlog=1,ylog=1,xra=[0.01,100],yra=[0.01,100],aspect_ratio=1,ytitle='RESISTANT MEAN')
 ;p = plot(ebv_sigm[0,*],ebv_sigm[6,*],'o',sym_size=0.5,sym_filled=1,color='blue',xlog=1,ylog=1,xra=[0.01,100],yra=[0.01,100],aspect_ratio=1,ytitle='RESISTANT MEDIAN')
 
+
+
+
+
+        ;if keyword_set(old_method) then begin
+        ;;; remove outliers
+        ;resistant_mean,param[0,*],3.,mn,sigmn,nr,goodvec=ig
+        ;nrej[i] = nr
+        ;if (nr eq niter) then begin
+        ;    ;; if resistant mean unsuccessful
+        ;    ;; flag source
+        ;    bad_fit[i] = 1
+        ;    ebv = param[0,*]
+        ;    rchi = param[-2,*]/param[-1,*]
+        ;    ;; pick best-fit chi-square
+        ;    if keyword_set(flat) then min_chi = min(abs(1.-rchi),ibest) else $
+        ;                              min_chi = min(rchi,ibest)
+        ;endif else begin
+        ;    ;; if resistant mean successful
+        ;    ebv = param[0,ig]
+        ;    red = this_obs[ig].z
+        ;    c_a = param[2,ig]
+        ;    lir = l_agn(6.,ebv,red,c_a,/log)
+        ;    dl2 = dlum(red,/sq)
+        ;    flx = lir-alog10(4.*!const.pi*dl2)
+        ;    flx[where(lir eq 0.,/null)] = 0.
+        ;    rchi = param[-2,ig]/param[-1,ig]
+        ;    ;; closest E(B-V) to the mean
+        ;    !NULL = min(abs(mn-ebv),iloc)
+        ;    best_ebv = ebv[iloc]
+        ;    ;; find closest realization(s)
+        ;    iiebv = ebv eq best_ebv
+        ;    ibest = where(iiebv,nbest)
+        ;    ;; more than one realization, pick best chi-square
+        ;    if (nbest ne 1) then begin
+        ;        if keyword_set(flat) then !NULL = min(abs(1.-rchi[ibest]),imin) else $
+        ;                                  !NULL = min(rchi[ibest],imin)
+        ;        ibest = ibest[imin]
+        ;        nbest = n_elements(ibest)
+        ;    endif
+        ;    ;; sanity check
+        ;    if (nbest ne 1) then stop
+        ;endelse
+        ;;; best-fit SED for each object        
+        ;param_nobj[*,i] = param[*,ibest]
+        ;obj_data_nobj[i] = obj_data[ibest]
+        ;;; input resampling results
+        ;ebv_sigm[*,i] = [median(ebv),moment(ebv)]
+        ;red_sigm[*,i] = [median(red),moment(red)]
+        ;lir_sigm[*,i] = [median(lir),moment(lir)]
+        ;flx_sigm[*,i] = [median(flx),moment(flx)]
+        ;endif
 
 
 

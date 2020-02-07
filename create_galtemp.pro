@@ -81,6 +81,9 @@ PRO create_galtemp, savfile, $
 common _comp
 common _bp
 
+;; setting E(B-V)
+;ebv_agn = [1d-6,2d-4,5d-4,1d-3,2d-3,4d-3,8d-3,1.5d-2,10.^(dindgen(53,start=2)/20-1)-0.1d]
+
 instr = strupcase(instr)
 ;; filter identifier + central wavelength array
 wavband = []
@@ -227,5 +230,9 @@ print, 'OUTPUT: '+savfile
 
 
 END
+
+
+
+
 
 

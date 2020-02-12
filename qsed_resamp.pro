@@ -121,10 +121,10 @@ date_str = string(y, format='(I4.2)') + $
 
         ;; construct full SED output array for all objects
         if (i eq 0) then begin
-            param_nobj = dblarr(n_elements(param[*,0]),nobj)
-            band_nobj = band
-            wave_nobj = wave
-            obj_data_nobj = replicate(obj_data[0],nobj)
+            param_resamp = dblarr(n_elements(param[*,0]),nobj)
+            band_resamp = band
+            wave_resamp = wave
+            obj_data_resamp = replicate(obj_data[0],nobj)
         endif
         
         ;; record the number of best-fit models not requiring an AGN component
@@ -155,20 +155,26 @@ date_str = string(y, format='(I4.2)') + $
         ;; sanity check
         if (nbest ne 1) then stop
         ;; best-fit SED for each object        
-        param_nobj[*,i] = param[*,ibest]
-        obj_data_nobj[i] = obj_data[ibest]
+        param_resamp[*,i] = param[*,ibest]
+        obj_data_resamp[i] = obj_data[ibest]
         ;; input resampling results
         ebv_sigm[*,i] = [median(ebv),medabsdev(ebv)]
         red_sigm[*,i] = [median(red),medabsdev(red)]
         lir_sigm[*,i] = [median(lir),medabsdev(lir)]
         flx_sigm[*,i] = [median(flx),medabsdev(flx)]        
     endfor
-save,ebv_sigm,red_sigm,lir_sigm,flx_sigm,nrej,bad_fit,/compress,file='resamp_fits.sav'
+stop
+;; save resampled fitting
+resamp_vars = ['MAG','E_MAG','FLUX','E_FLUX','Z']
+for v = 0,n_elements(resamp_vars)-1 do re = execute(resamp_vars[v]+'_RESAMP = obj_data_resamp.'+resamp_vars[v])
+sav_vars = [resamp_vars+'_RESAMP',['EBV','RED','LIR','FLX']+'_SIGM','NREJ','BAD_FIT']
+sav_str = strjoin(sav_vars,',')
+re = execute('save,'+sav_str+',/compress,file="resamp_fits.sav"')
 ;endfor
 
-;; restore variables to original names
-param = param_nobj
-for v = 0,n_elements(obj_vars)-1 do re = execute(obj_vars[v]+' = obj_data_nobj.'+obj_vars[v])
+;; restore variables to original names and pull original data
+param = param_resamp
+for v = 0,n_elements(obj_vars)-1 do re = execute(obj_vars[v]+' = obs.'+obj_vars[v])
 ;; save concatenated SED modeling variables in top directory
 sav_vars = [fit_vars,'AGN_PERC',obj_vars]
 sav_str = strjoin(sav_vars,',')

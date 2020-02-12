@@ -163,9 +163,9 @@ date_str = string(y, format='(I4.2)') + $
         lir_sigm[*,i] = [median(lir),medabsdev(lir)]
         flx_sigm[*,i] = [median(flx),medabsdev(flx)]        
     endfor
-stop
+    
 ;; save resampled fitting
-resamp_vars = ['MAG','E_MAG','FLUX','E_FLUX','Z']
+resamp_vars = ['MAG','FLUX','E_FLUX','Z']
 for v = 0,n_elements(resamp_vars)-1 do re = execute(resamp_vars[v]+'_RESAMP = obj_data_resamp.'+resamp_vars[v])
 sav_vars = [resamp_vars+'_RESAMP',['EBV','RED','LIR','FLX']+'_SIGM','NREJ','BAD_FIT']
 sav_str = strjoin(sav_vars,',')

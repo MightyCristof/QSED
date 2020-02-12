@@ -99,9 +99,12 @@ date_str = string(y, format='(I4.2)') + $
 	    nbands = n_elements(band)
 	    ;; resample input: photometry
         for b = 0,nbands-1 do begin
-            this_obs.mag[b] += this_obs.e_mag[b]*randomn(seed,niter)
-            this_obs.flux[b] = magflux(this_obs.mag[b],this_obs.e_mag[b],band[b],err=this_err)
-            this_obs.e_flux[b] = this_err
+            binct = obs[i].bin[b]
+            if (binct gt 0.) then begin
+                this_obs.mag[b] += this_obs.e_mag[b]*randomn(seed,niter)
+                this_obs.flux[b] = magflux(this_obs.mag[b],this_obs.e_mag[b],band[b],err=this_err)
+                this_obs.e_flux[b] = this_err
+            endif
         endfor
 	    ;; resample input: redshift
 	    this_obs.z += this_obs.zerr*randomn(seed,niter)

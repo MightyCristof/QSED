@@ -64,13 +64,6 @@ endif else begin
     outfile = (strsplit(file,'/.',/extract))[-2]+'_flux.sav'
 endelse
 
-if keyword_set(mask) then begin
-    ;; load reject mask
-    mask_dir = '~/IDLWorkspace/libraries/cmc/mangle_masks/'
-    wise_mask = mask_dir+'wise_mask_allwise_stars_pix.ply'
-    read_mangle_polygons,wise_mask,allwise
-endif
-
 for f = 0,nfiles-1 do begin
     ;; read data
     data = mrdfits(file[f],1)
@@ -321,13 +314,15 @@ for f = 0,nfiles-1 do begin
     if (nbadz gt 0) then data[badz].zp = -9999.
     ;; sort redshift data
     for i = 0,n_elements(zstr)-1 do begin
-        re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0.,zlen)')
+        if (zstr[i] eq 'z_zsupp') then re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0.,zlen)') else $
+                                       re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0. and data.'+e_zstr[i]+' gt 0.,zlen)')
         if (zlen gt 0.) then begin
             re = execute('zall[iz] += strtrim(data[iz].'+zstr[i]+',2)')
             re = execute('z[iz] = data[iz].'+zstr[i])
             re = execute('zallerr[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
-            if (e_zstr[i] ne 'cat_zsupp') then re = execute('zerr[iz] = data[iz].'+e_zstr[i]) else $
-                                               zerr[iz] = z[iz]*0.05
+            if (zstr[i] eq 'z_zsupp') then zerr[iz] = med_zerr else $
+                                           re = execute('zerr[iz] = data[iz].'+e_zstr[i])
+            if (zstr[i] eq 'zs') then re = execute('med_zerr = median(data[iz].'+e_zstr[i]+')')
         endif
         zall += ','
         zallerr += ','
@@ -387,6 +382,10 @@ for f = 0,nfiles-1 do begin
     
     ;; ...aren't in the mask
     if keyword_set(mask) then begin
+        ;; load reject mask
+        mask_dir = '~/IDLWorkspace/libraries/cmc/mangle_masks/'
+        wise_mask = mask_dir+'wise_mask_allwise_stars_pix.ply'
+        read_mangle_polygons,wise_mask,allwise
         euler,obs.ra,obs.dec,gal_l,gal_b,1
         in_allwise=is_in_window_pix(ra=gal_l,dec=gal_b,allwise,scheme='6s')
         ikeep = where(~in_allwise,ct)				;; sources not in reject mask

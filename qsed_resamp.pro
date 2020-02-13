@@ -131,19 +131,18 @@ date_str = string(y, format='(I4.2)') + $
         !NULL = where(param[2,*] gt 0.,nagn)
         agn_perc[i] = nagn*1./niter
         
-        ebv = param[0,*]
-        red = this_obs.z
-        c_a = param[2,*]
-        lir = l_agn(6.,ebv,red,c_a,/log)
-        dl2 = dlum(red,/sq)
-        flx = lir-alog10(4.*!const.pi*dl2)
-        flx[where(lir eq 0.,/null)] = 0.
+        ebv_dist = reform(param[0,*])
+        red_dist = this_obs.z
+        c_a = reform(param[2,*])
+        lir_dist = l_agn(6.,ebv_dist,red_dist,c_a)
+        dl2 = dlum(red_dist,/sq)
+        flx_dist = lir_dist/(4.*!const.pi*dl2)
         rchi = param[-2,*]/param[-1,*]
         ;; closest E(B-V) to the mean
-        !NULL = min(abs(median(ebv)-ebv),iloc)
-        best_ebv = ebv[iloc]
+        !NULL = min(abs(median(ebv_dist)-ebv_dist),iloc)
+        best_ebv = ebv_dist[iloc]
             ;; find closest realization(s)
-        iiebv = ebv eq best_ebv
+        iiebv = ebv_dist eq best_ebv
         ibest = where(iiebv,nbest)
         ;; more than one realization, pick best chi-square
         if (nbest ne 1) then begin
@@ -158,10 +157,10 @@ date_str = string(y, format='(I4.2)') + $
         param_resamp[*,i] = param[*,ibest]
         obj_data_resamp[i] = obj_data[ibest]
         ;; input resampling results
-        ebv_sigm[*,i] = [median(ebv),medabsdev(ebv)]
-        red_sigm[*,i] = [median(red),medabsdev(red)]
-        lir_sigm[*,i] = [median(lir),medabsdev(lir)]
-        flx_sigm[*,i] = [median(flx),medabsdev(flx)]        
+        ebv_sigm[*,i] = [median(ebv_dist),medabsdev(ebv_dist)]
+        red_sigm[*,i] = [median(red_dist),medabsdev(red_dist)]
+        lir_sigm[*,i] = [median(lir_dist),medabsdev(lir_dist)]
+        flx_sigm[*,i] = [median(flx_dist),medabsdev(flx_dist)]        
     endfor
     
 ;; save resampled fitting

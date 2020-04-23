@@ -56,6 +56,10 @@ case strupcase(band) of
     'IRAC2': wav = 4.5
     'IRAC3': wav = 5.8
     'IRAC4': wav = 8.
+    'IRAS1': wav = 12.
+    'IRAS2': wav = 25.
+    'IRAS3': wav = 60.
+    'IRAS4': wav = 100.
     'FLMX1': wav = 1.250
     'FLMX2': wav = 2.215
     'GALEX1': wav = 0.153862

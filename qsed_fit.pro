@@ -1,11 +1,11 @@
 ;-----------------------------------------------------------------------------------------
 ; NAME:                                                                       IDL Function
-;	qsed_zs_multi
+;	qsed_fit
 ;
 ; PURPOSE:
 ;	
 ; CALLING SEQUENCE:
-;   qsed_zs_multi, phot, filts
+;   qsed_fit, phot, filts
 ;	
 ; INPUTS:
 ;	phot			- Input IDL structure of source photometry and data.

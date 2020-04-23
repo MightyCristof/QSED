@@ -3,7 +3,7 @@
 ;   l_agn
 ;
 ; PURPOSE:
-;   Calculate AGN luminosity at a desired wavelength using the Asesf+10 AGN tempalate.
+;   Calculate AGN luminosity at a desired rest wavelength using the Asesf+10 AGN tempalate.
 ; 
 ; CALLING SEQUENCE:
 ;   lum = l_agn( wav0, color, redshift, c_agn, [, /LOG ] )

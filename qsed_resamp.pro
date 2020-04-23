@@ -81,10 +81,10 @@ date_str = string(y, format='(I4.2)') + $
     if keyword_set(test) then obs = obs[0:test-1]
 	nobj = n_elements(obs)						;; number of sources in file
     ;; arrays for resampling results
-    ebv_sigm = dblarr(2,nobj)
-    red_sigm = dblarr(2,nobj)
-    lir_sigm = dblarr(2,nobj)
-    flx_sigm = dblarr(2,nobj)
+    ebv_sigm = dblarr(4,nobj)
+    red_sigm = dblarr(4,nobj)
+    lir_sigm = dblarr(4,nobj)
+    flx_sigm = dblarr(4,nobj)
     
     nrej = lonarr(nobj)
     ;; boolean for bad fits
@@ -128,39 +128,57 @@ date_str = string(y, format='(I4.2)') + $
         endif
         
         ;; record the number of best-fit models not requiring an AGN component
-        !NULL = where(param[2,*] gt 0.,nagn)
-        agn_perc[i] = nagn*1./niter
-        
-        ebv_dist = reform(param[0,*])
-        red_dist = this_obs.z
-        c_a = reform(param[2,*])
-        lir_dist = l_agn(6.,ebv_dist,red_dist,c_a)
-        dl2 = dlum(red_dist,/sq)
-        flx_dist = lir_dist/(4.*!const.pi*dl2)
-        rchi = param[-2,*]/param[-1,*]
-        ;; closest E(B-V) to the mean
-        !NULL = min(abs(median(ebv_dist)-ebv_dist),iloc)
-        best_ebv = ebv_dist[iloc]
-            ;; find closest realization(s)
-        iiebv = ebv_dist eq best_ebv
-        ibest = where(iiebv,nbest)
-        ;; more than one realization, pick best chi-square
-        if (nbest ne 1) then begin
-            if keyword_set(flat) then !NULL = min(abs(1.-rchi[ibest]),imin) else $
-                                      !NULL = min(rchi[ibest],imin)
-            ibest = ibest[imin]
-            nbest = n_elements(ibest)
-        endif
-        ;; sanity check
-        if (nbest ne 1) then stop
+        iagn = where(param[2,*] gt 0.,nagn)
+        agn_perc[i] = nagn*100./niter
+        if (nagn gt 0.) then begin
+        ;; ============================
+        ;; AGN presence in realizations
+        ;; ============================
+            ebv_dist = reform(param[0,iagn])
+            red_dist = this_obs[iagn].z
+            c_a = reform(param[2,iagn])
+            lir_dist = l_agn(6.,ebv_dist,red_dist,c_a)
+            dl2 = dlum(red_dist,/sq)
+            flx_dist = lir_dist/(4.*!const.pi*dl2)
+            rchi = param[-2,iagn]/param[-1,iagn]
+            ;; closest E(B-V) to the mean
+            del_ebv = min(abs(median(ebv_dist)-ebv_dist),iloc)
+            best_ebv = ebv_dist[iloc]
+                ;; find closest realization(s)
+            iiebv = ebv_dist eq best_ebv
+            ibest = where(iiebv,nbest)
+            ;; more than one realization, pick best chi-square
+            if (nbest ne 1) then begin
+                if keyword_set(flat) then !NULL = min(abs(1.-rchi[ibest]),imin) else $
+                                          !NULL = min(rchi[ibest],imin)
+                ibest = iagn[ibest[imin]]
+                nbest = n_elements(ibest)
+            endif
+            ;; sanity check
+            if (nbest ne 1) then stop
+            ;; input resampling results
+            if (nagn eq 1) then begin
+                ebv_sigm[*,i] = [ebv_dist,-1.,ebv_dist,-1.]
+                red_sigm[*,i] = [red_dist,-1.,red_dist,-1.]
+                lir_sigm[*,i] = [lir_dist,-1.,lir_dist,-1.]
+                flx_sigm[*,i] = [flx_dist,-1.,flx_dist,-1.]
+            endif else begin
+                ebv_sigm[*,i] = [median(ebv_dist),medabsdev(ebv_dist),mean(ebv_dist),stddev(ebv_dist)]
+                red_sigm[*,i] = [median(red_dist),medabsdev(red_dist),mean(red_dist),stddev(red_dist)]
+                lir_sigm[*,i] = [median(lir_dist),medabsdev(lir_dist),mean(lir_dist),stddev(lir_dist)]
+                flx_sigm[*,i] = [median(flx_dist),medabsdev(flx_dist),mean(flx_dist),stddev(flx_dist)]
+            endelse
+        endif else begin
+        ;; ===================================
+        ;; no AGN presence in any realizations
+        ;; ===================================
+            rchi = param[-2,*]/param[-1,*]
+            if keyword_set(flat) then !NULL = min(abs(1.-rchi),ibest) else $
+                                      !NULL = min(rchi,ibest)
+        endelse
         ;; best-fit SED for each object        
         param_resamp[*,i] = param[*,ibest]
         obj_data_resamp[i] = obj_data[ibest]
-        ;; input resampling results
-        ebv_sigm[*,i] = [median(ebv_dist),medabsdev(ebv_dist)]
-        red_sigm[*,i] = [median(red_dist),medabsdev(red_dist)]
-        lir_sigm[*,i] = [median(lir_dist),medabsdev(lir_dist)]
-        flx_sigm[*,i] = [median(flx_dist),medabsdev(flx_dist)]        
     endfor
     
 ;; save resampled fitting
@@ -168,7 +186,7 @@ resamp_vars = ['MAG','FLUX','E_FLUX','Z']
 for v = 0,n_elements(resamp_vars)-1 do re = execute(resamp_vars[v]+'_RESAMP = obj_data_resamp.'+resamp_vars[v])
 sav_vars = [resamp_vars+'_RESAMP',['EBV','RED','LIR','FLX']+'_SIGM','NREJ','BAD_FIT']
 sav_str = strjoin(sav_vars,',')
-re = execute('save,'+sav_str+',/compress,file="resamp_fits.sav"')
+re = execute('save,'+sav_str+',/compress,file="resamp.sav"')
 ;endfor
 
 ;; restore variables to original names and pull original data

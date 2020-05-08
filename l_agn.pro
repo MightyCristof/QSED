@@ -74,7 +74,7 @@ nufnu0 = nu0*fnu0
 ;; calculate luminosity
 lum0 = 4.*!const.pi*dlum(red,/sq)*nufnu0
 ;; return in log space
-if keyword_set(log) then lum0 = alog10(lum0) > 0.
+if keyword_set(log) then lum0 = alog10(lum0) > (-9999.)
 
 return, lum0
 

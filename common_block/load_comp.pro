@@ -44,7 +44,7 @@ PRO load_comp, file, $
 
 
 common _comp, comp
-if keyword_set(push) then restore, '~/Research/sed_models/primed_templates/'+file else $
+if keyword_set(push) then restore, '~/Research/sed_modeling/primed_templates/'+file else $
                           restore, file
 
 

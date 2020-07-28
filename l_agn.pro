@@ -19,7 +19,7 @@
 ;   /LOG            - Set keyword to output luminosity in log space.
 ;
 ; OUTPUTS:
-;	lum0            - Luminosity of source in cgs units [erg/s].
+;	nulnu0          - Luminosity of source in cgs units [erg/s].
 ;
 ; OPTIONAL OUTPUTS:
 ;  
@@ -72,11 +72,11 @@ fnu0 = c_a*agn0*10.^(-0.4*kap0*col)
 nu0 = !const.c/(wav0/1e6)/(1+red)
 nufnu0 = nu0*fnu0
 ;; calculate luminosity
-lum0 = 4.*!const.pi*dlum(red,/sq)*nufnu0
+nulnu0 = 4.*!const.pi*dlum(red,/sq)*nufnu0
 ;; return in log space
-if keyword_set(log) then lum0 = alog10(lum0) > (-9999.)
+if keyword_set(log) then nulnu0 = alog10(nulnu) > (-9999.)
 
-return, lum0
+return, nulnu0
 
 
 END

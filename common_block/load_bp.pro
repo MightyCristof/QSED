@@ -38,7 +38,7 @@ PRO load_bp, file, $
 
 
 common _bp, bp
-if keyword_set(push) then restore, '~/Research/sed_models/bandpass/'+file else $
+if keyword_set(push) then restore, '~/Research/sed_modeling/bandpass/'+file else $
 						  restore, file
 
 

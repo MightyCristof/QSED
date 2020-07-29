@@ -43,7 +43,7 @@ print, ' '
 
 
 ;; input data files
-temp_dir = '~/Research/sed_models/raw_templates/'
+temp_dir = '~/Research/sed_modeling/raw_templates/'
 a10 = 'assef+10/lrt_templates.dat'
 ext = 'assef+10/ext_law_data.dat'
 k15 = 'kirkpatrick+15/Comprehensive_library/SFG1.txt'

@@ -72,6 +72,7 @@ ntemps = n_elements(temps)
 ;; extract indices of sources to plot
 if (n_elements(ind) eq 0) then ind = lindgen(n_elements(in_fits[0,*]))
 nobj = n_elements(ind)
+nband = n_elements(obswav)
 flux = in_flux[*,ind]
 err = in_err[*,ind]
 bin = in_bin[*,ind]
@@ -87,12 +88,12 @@ chi = fits[-2:-1,*]
 ;; calculate wavelength and frequency for sources and templates
 if keyword_set(restframe) then begin
     objwav = obswav#(1+z)^(-1)
-    objnu = (!const.c*1e6)/objwav#(1.+z)^(-1)
+    objnu = (!const.c*1e6)/objwav/rebin((1+z),nband,nobj)
     tempwav = rebin(comp.wav,n_elements(comp),nobj)
-    tempnu = (!const.c*1e6)/tempwav#(1.+z)^(-1)
+    tempnu = (!const.c*1e6)/tempwav/rebin((1+z),n_elements(comp),nobj)
     xtitle = '$Rest wavelength [ \mum ]$'
 endif else begin
-    objwav = rebin(obswav,n_elements(obswav),nobj)
+    objwav = rebin(obswav,nband,nobj)
     objnu = (!const.c*1e6)/objwav
     tempwav = comp.wav#reform(1+z)
     tempnu = (!const.c*1e6)/tempwav

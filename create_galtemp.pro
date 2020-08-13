@@ -207,7 +207,7 @@ foreach instr, bp_names do begin
 		thru[where(thru lt 0.,/null)] = 0.					;; ensure no negative throughput values (sanity check)
 		normal = total(thru*dnu,1)        					;; normalize throughput
 		thru /= rebin(reform(normal,1,zlen),tlen,zlen)		
-		thru[where(~finite(thru))] = 0.						;; ensure finite values (sanity check)
+		thru[where(~finite(thru),/null)] = 0.						;; ensure finite values (sanity check)
 		ifilt = where(strmatch(wavband,instr+strtrim(band+1,2)) eq 1,ct)	;; match bandpass filter (BAND) to template output (WAVBAND)
 		if (ct eq 0) then stop								;; did you goof?
 		for pt = 0,n_elements(pts)-1 do begin				;; fill the convolved template array

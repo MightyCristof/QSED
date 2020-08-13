@@ -80,22 +80,22 @@ id = in_id[ind]
 fits = in_fits[*,ind]
 
 ;; extract model parameters
-ebv = fits[0,*]
-z = fits[1,*]
+ebv = reform(fits[0,*])
+z = reform(fits[1,*])
 coeff = fits[2:2+ntemps-1,*]
 chi = fits[-2:-1,*]
 
 ;; calculate wavelength and frequency for sources and templates
 if keyword_set(restframe) then begin
     objwav = obswav#(1+z)^(-1)
-    objnu = (!const.c*1e6)/objwav/rebin((1+z),nband,nobj)
+    objnu = (!const.c*1e6)/objwav/rebin(transpose(1+z),nband,nobj)
     tempwav = rebin(comp.wav,n_elements(comp),nobj)
-    tempnu = (!const.c*1e6)/tempwav/rebin((1+z),n_elements(comp),nobj)
+    tempnu = (!const.c*1e6)/tempwav/rebin(transpose(1+z),n_elements(comp),nobj)
     xtitle = '$Rest wavelength [ \mum ]$'
 endif else begin
     objwav = rebin(obswav,nband,nobj)
     objnu = (!const.c*1e6)/objwav
-    tempwav = comp.wav#reform(1+z)
+    tempwav = comp.wav#(1+z)
     tempnu = (!const.c*1e6)/tempwav
     xtitle = '$Observed wavelength [ \mum ]$'
 endelse

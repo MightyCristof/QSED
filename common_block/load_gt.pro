@@ -51,7 +51,7 @@ common _galtemp, temp, $
                  ztemp, $
                  ebv_agn
 
-if keyword_set(push) then restore, '~/Research/sed_models/galtemps/'+file else $
+if keyword_set(push) then restore, '~/Research/sed_modeling/galtemps/'+file else $
                           restore, file
 
 

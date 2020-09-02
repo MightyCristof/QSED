@@ -43,8 +43,8 @@
 ;
 ;	Common redshift arrays:
 ;		0.000 < z < 7.999           dindgen(8000)/1000.
-;       0.000 < z < 1.999           dindgen(2000)/1000.
-;       0.000 < z < 1.000           dindgen(1000)/1000.
+;       0.000 < z < 2.999           dindgen(3000)/1000.
+;       0.000 < z < 0.999           dindgen(1000)/1000.
 ;
 ; EXAMPLES:
 ;	load_comp,'comp_temp4.sav',/push

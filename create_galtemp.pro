@@ -44,7 +44,7 @@
 ;	Common redshift arrays:
 ;		0.000 < z < 7.999           dindgen(8000)/1000.
 ;       0.000 < z < 1.999           dindgen(2000)/1000.
-;       0.000 < z < 1.000           dindgen(1001)/1000.
+;       0.000 < z < 1.000           dindgen(1000)/1000.
 ;
 ; EXAMPLES:
 ;	load_comp,'comp_temp4.sav',/push
@@ -195,24 +195,24 @@ dnu = [dnu,dnu[-1,*]]					;; match previous dimensions (shouldn't ever play a pa
 
 ;; create and normalize bandpass templates
 ;; determine photometric band/column and convolve galtemps
-foreach instr, bp_names do begin
-	print, instr
-	re = execute('nbands = n_tags('+instr+')')				;; # of filters in instr
+foreach inst, bp_names do begin
+	print, inst
+	re = execute('nbands = n_tags('+inst+')')				;; # of filters in inst
 	for band = 0,nbands-1 do begin
 		thru = dblarr(tlen,zlen)							;; throughput array
-		for z = 0,zlen-1 do re = execute('thru[*,z] = interpol('+instr+'.(band).thru,'+instr+'.(band).wave,tempwav[*,z])')	;; step through each redshift and interpolate
-		re = execute('mm = minmax('+instr+'.(band).wave)') 	;; determine the upper and lower bounds of throughput from wavelength
+		for z = 0,zlen-1 do re = execute('thru[*,z] = interpol('+inst+'.(band).thru,'+inst+'.(band).wave,tempwav[*,z])')	;; step through each redshift and interpolate
+		re = execute('mm = minmax('+inst+'.(band).wave)') 	;; determine the upper and lower bounds of throughput from wavelength
 		ibounds = where(tempwav lt mm[0] or tempwav gt mm[1], /null)		;; find indices where template is out of bounds
 		thru[ibounds] = 0.									;; clear values beyond wavelength boundaries
 		thru[where(thru lt 0.,/null)] = 0.					;; ensure no negative throughput values (sanity check)
 		normal = total(thru*dnu,1)        					;; normalize throughput
 		thru /= rebin(reform(normal,1,zlen),tlen,zlen)		
-		thru[where(~finite(thru),/null)] = 0.						;; ensure finite values (sanity check)
-		ifilt = where(strmatch(wavband,instr+strtrim(band+1,2)) eq 1,ct)	;; match bandpass filter (BAND) to template output (WAVBAND)
+		thru[where(~finite(thru),/null)] = 0.				;; ensure finite values (sanity check)
+		ifilt = where(strmatch(wavband,inst+strtrim(band+1,2)) eq 1,ct)	;; match bandpass filter (BAND) to template output (WAVBAND)
 		if (ct eq 0) then stop								;; did you goof?
 		for pt = 0,n_elements(pts)-1 do begin				;; fill the convolved template array
-			if (strmatch(temps[pt],'AGN*')) then re = execute(pts[pt]+'[ifilt,*,*] = total('+temps[pt]+' * rebin(thru,tlen,zlen,clen) * rebin(dnu,tlen,zlen,clen),1)')
-										         re = execute(pts[pt]+'[ifilt,*] = total('+temps[pt]+' * thru * dnu,1)')
+			if (strmatch(temps[pt],'AGN*')) then re = execute(pts[pt]+'[ifilt,*,*] = total('+temps[pt]+'*rebin(thru,tlen,zlen,clen)*rebin(dnu,tlen,zlen,clen),1)') else $
+										         re = execute(pts[pt]+'[ifilt,*] = total('+temps[pt]+'*thru*dnu,1)')
 		endfor
 	endfor
 endforeach

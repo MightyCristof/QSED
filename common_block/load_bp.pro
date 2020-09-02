@@ -38,10 +38,19 @@ PRO load_bp, file, $
 
 
 common _bp, bp
+
+if (n_elements(file) eq 0) then file = 'bandpass.sav'
 if keyword_set(push) then restore, '~/Research/sed_modeling/bandpass/'+file else $
 						  restore, file
 
 
 END
+
+
+
+
+
+
+
 
 

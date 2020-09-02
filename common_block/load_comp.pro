@@ -44,10 +44,19 @@ PRO load_comp, file, $
 
 
 common _comp, comp
+
+if (n_elements(file) eq 0) then file = 'comp.sav'
 if keyword_set(push) then restore, '~/Research/sed_modeling/primed_templates/'+file else $
                           restore, file
 
 
 END
+
+
+
+
+
+
+
 
 

@@ -170,7 +170,7 @@ for f = 0,nfiles-1 do begin
             re = execute(mag_vars[i]+'[ixdqso] = magflux(xdf[i,*],xde[i,*],xdb[i],err='+e_mag_vars[i]+'[ixdqso],/flux_in)')
         endfor
     endif
-    
+
     ;; add unWISE flux and calculate magnitudes
     if keyword_set(forced_phot) then begin
         unwb = band[where(strmatch(band,'WISE*'),ct)]			;; unWISE band
@@ -267,13 +267,16 @@ for f = 0,nfiles-1 do begin
            bin: bytarr(nbands), $
            z: 0d, $
            zerr: 0d, $
-           ztype:'', $
-           zall: '', $
-           zallerr: '', $
-           class: '' $
+           zstr: '', $
+           zerrstr: '', $
+           zbin: '', $
+           ztype: '', $
+           photoerrorclass: -9999, $
+           class: '', $
+           iiaccept: 1b $
            }
     obs = replicate(obs,ndata)
-    
+
     ;; object ID and positions
     obs[isdss].objid = data[isdss].objid
     if (xdqsolen gt 0.) then obs[ixdqso].objid = long64(strtrim(data[ixdqso].objid_xdqso,2))
@@ -298,44 +301,55 @@ for f = 0,nfiles-1 do begin
         bin[i2m,*] = bin2m
     endif
     
-    ;; full redshift data set
-    ;; (1) ZP     == SDSS DR14 phot-z
-    ;; (2) PEAKZ  == XDQSOz (DiPompeo+15)
-    ;; (3) ZS     == SDSS DR14 spec-z
-    ;; (4) Z_SUPP == Reyes+08, Lacy+13, Hainline+14, Yuan+16
-    zstr = ['zp','peakz','zs','z_zsupp']
-    e_zstr = ['zperr','peakfwhm','zserr','cat_zsupp']	;; on (4) returns source catalog
-    zall = strarr(ndata)			;; all redshift data
-    zallerr = strarr(ndata)			;; all redshift error data
+    ;; full redshift data set in ascending order of use
+    ;; ZP     == SDSS DR14 phot-z
+    ;; PEAKZ  == XDQSOz (DiPompeo+15)
+    ;; ZS     == SDSS DR14 spec-z
+    ;; Z_SUPP == Reyes+08, Lacy+13, Hainline+14, Yuan+16
+    zdat = ['ZP','PEAKZ','ZS','ZSUPP']                ;; name of redshift tag
+    e_zdat = ['ZPERR','PEAKFWHM','ZSERR','ZSUPP']	;; name of redshift error tag; N/A for Z_SUPP so placeholder
+    zstr = strarr(ndata)			;; all redshift data
+    zerrstr = strarr(ndata)			;; all redshift error data
+    zbin = strarr(ndata)            ;; valid redshift flag
     z = dblarr(ndata)				;; "best" redshift value
     zerr = dblarr(ndata)			;; "best" redshift error value
     ;; trust SDSS photometric redshifts only where reliable; -1 <= photoerrorclass <= 3 (photoerrorclass == 1 is best match)
-    iphotz = where(data.photoerrorclass ge -1 and data.photoerrorclass lt 3,complement=badz,ncomplement=nbadz)
-    if (nbadz gt 0) then data[badz].zp = -9999.
+    iigdzp = data.photoerrorclass ge -1 and data.photoerrorclass le 3
+    ;if (nbadz gt 0) then data[badz].zp = -9999.
     ;; sort redshift data
-    for i = 0,n_elements(zstr)-1 do begin
-        if (zstr[i] eq 'z_zsupp') then re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0.,zlen)') else $
-                                       re = execute('iz = where(finite(data.'+zstr[i]+') and data.'+zstr[i]+' gt 0. and data.'+e_zstr[i]+' gt 0.,zlen)')
-        if (zlen gt 0.) then begin
-            re = execute('zall[iz] += strtrim(data[iz].'+zstr[i]+',2)')
-            re = execute('z[iz] = data[iz].'+zstr[i])
-            re = execute('zallerr[iz] += strtrim(data[iz].'+e_zstr[i]+',2)')
-            if (zstr[i] eq 'z_zsupp') then zerr[iz] = med_zerr else $
-                                           re = execute('zerr[iz] = data[iz].'+e_zstr[i])
-            if (zstr[i] eq 'zs') then re = execute('med_zerr = median(data[iz].'+e_zstr[i]+')')
+    for i = 0,n_elements(zdat)-1 do begin
+        re = execute('z_value = data.'+zdat[i]+' & z_error = data.'+e_zdat[i])    
+        if (zdat[i] eq 'ZSUPP') then begin
+            isupp = where(strtrim(z_error,2),nsupp,complement=invalid)
+            if (nsupp gt 0) then z_error[isupp] = z_value[isupp]*0.05
+            z_error[invalid] = 0.       
         endif
-        zall += ','
-        zallerr += ','
+        iiz = finite(z_value) and finite(z_error) and z_value gt 0. and z_error gt 0.
+        iz = where(finite(z_value) and finite(z_error) and z_value gt 0. and z_error gt 0.,zlen)
+        if (zlen gt 0.) then begin
+            zstr[iz] += strtrim(z_value[iz],2)
+            zerrstr[iz] += strtrim(z_error[iz],2)
+        endif
+        ;; store photometric redshift but do not flag it for use
+        if (zdat[i] eq 'ZP') then iz = where(iiz and iigdzp,/null)        
+        zbin[iz] += '1'
+        ;; fill string for next iteration
+        zstr += ','
+        zerrstr += ','
+        zbin += ','
     endfor
-    ztype = zorig(zall)
-    
+    ;; determine best redshift
+    ztype = zorigin(zbin,zstr,zpref=zpref)
+    !null = zorigin(zbin,zerrstr,zpref=zerrpref)
     ;; finalized source redshift information
-    obs.z = z
-    obs.zerr = zerr
+    obs.z = zpref
+    obs.zerr = zerrpref
+    obs.zstr = zstr
+    obs.zerrstr = zerrstr
+    obs.zbin = zbin
     obs.ztype = ztype
-    obs.zall = zall
-    obs.zallerr = zallerr
-    
+    obs.photoerrorclass = data.photoerrorclass > (-9999)
+
     ;; SDSS recognized "CLASS"
     obs.class = data.class
     
@@ -344,42 +358,44 @@ for f = 0,nfiles-1 do begin
     
     ;; ..have clean photometry
     ;; NOTE: After this step OBS and DATA are no longer the same length!
-    ikeep = where(data.clean eq 1,ct)
+    iiaccept = where(data.clean eq 1,ct,complement=irem)
     if (ct eq 0) then continue
-    obs = obs[ikeep]
+    obs[irem].iiaccept = 0
     		
     ;; ...have redshift data!; loss of photo-z from photoerrorclass, etc. (sanity check)
-    ikeep = where(obs.z gt 0.,ct)
+    iiaccept = where(obs.z ne 0.,ct,complement=irem)
     if (ct eq 0) then continue
-    obs = obs[ikeep]
+    obs[irem].iiaccept = 0
     
     ;; ...have redshifts within specified range (phot-z ≤ 0.6; spec-z ≤ 1.0)
     iizs = strmatch(obs.ztype,'ZS*') and obs.z le 1.0
     iizp = strmatch(obs.ztype,'ZP') and obs.z le 0.6
-    ikeep = where(iizs or iizp,ct)
-    if (ct gt 0) then obs = obs[ikeep]
+    iiaccept = where(iizs or iizp,ct,complement=irem)
+    if (ct eq 0) then continue
+    obs[irem].iiaccept = 0
     
     ;; ...have constrained redshift errors
-    ikeep = where(obs.zerr gt 0.,ct)
+    iiaccept = where(obs.zerr ne 0.,ct,complement=irem)
     if (ct eq 0) then continue
-    obs = obs[ikeep]
+    obs[irem].iiaccept = 0
     
     ;; ...can be resampled in redshift space (redshift cuttoff z == 3)
-    ikeep = where(obs.z+4.*obs.zerr lt 3.,ct)
-    if (ct eq 0.) then continue
-    obs = obs[ikeep]
+    ;iiaccept = where(obs.z+4.*obs.zerr lt 3.,ct,complement=irem)
+    ;if (ct eq 0.) then continue
+    ;obs[irem].iiaccept = 0
     
     ;; ...have a minimum number of 7 photometric bands
-    ikeep = where(total(obs.bin,1) ge 7,ct)
+    iiaccept = where(total(obs.bin,1) ge 7,ct,complement=irem)
     if (ct eq 0) then continue 
-    obs = obs[ikeep]
+    obs[irem].iiaccept = 0
     
     ;; ...have detections in all four WISE bands
     iwise = where(strmatch(band,'WISE?'),ct)
     if (ct eq 0) then continue
-    ikeep = where(total(obs.bin[iwise],1) eq 4,ct)
-    if (ct gt 0) then obs = obs[ikeep]
-    
+    iiaccept = where(total(obs.bin[iwise],1) eq 4,ct,complement=irem)
+    if (ct eq 0) then continue
+    obs[irem].iiaccept = 0
+
     ;; ...aren't in the mask
     if keyword_set(mask) then begin
         ;; load reject mask
@@ -388,9 +404,9 @@ for f = 0,nfiles-1 do begin
         read_mangle_polygons,wise_mask,allwise
         euler,obs.ra,obs.dec,gal_l,gal_b,1
         in_allwise=is_in_window_pix(ra=gal_l,dec=gal_b,allwise,scheme='6s')
-        ikeep = where(~in_allwise,ct)				;; sources not in reject mask
+        iiaccept = where(~in_allwise,ct,complement=irem)		 ;; sources not in reject mask
         if (ct eq 0.) then continue
-        obs = obs[ikeep]
+        obs[irem].iiaccept = 0
     endif
     
     ;; finally, no duplicate objects in data set!
@@ -401,6 +417,9 @@ for f = 0,nfiles-1 do begin
         ;; remove duplicate objects, keep sources with most photometry
         ikeep = rem_dup(obsid,totbin)
         obs = obs[ikeep]
+
+        ;iiaccept = rem_dup(obsid,totbin)
+        ;obs[irem].iiaccept = 0
     endif
     
     save,obs,band,/compress,file=outfile[f]

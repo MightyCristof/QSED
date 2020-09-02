@@ -94,6 +94,8 @@ for i = 0,nobj-1 do begin
     this_obs.z += this_obs.zerr
     izlo = where(this_obs.z lt 0.,nzlo)
     if (nzlo gt 0) then this_obs[izlo].z = 0.
+    izhi = where(this_obs.z gt 0.999,nzhi)
+    if (nzhi gt 0) then this_obs[izhi].z = 3.
     
     ;; run SED fitting
     sed_out = qsed_fit(this_obs,band)

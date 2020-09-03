@@ -51,18 +51,13 @@ PRO read_sed_phot, file, $
                    FORCED_PHOT = forced_phot, $
                    MIN_ERR = min_err
 
+
+;on_error,2
+;npar = n_params()
+
 nfiles = n_elements(file)
-if (nfiles gt 1) then begin
-    outfile = strarr(nfiles)
-    for i = 0,n_elements(file)-1 do begin
-        temp = strsplit(file[i],'/.',/extract)
-        outfile[i] = temp[-2]+'_flux.sav';temp[where(strmatch(temp,'*part*'),outlen)]+'_flux.sav'
-        outlen=1
-        if (outlen eq 0) then stop
-    endfor
-endif else begin
-    outfile = (strsplit(file,'/.',/extract))[-2]+'_flux.sav'
-endelse
+outfile = strarr(nfiles)
+for i = 0,nfiles-1 do outfile[i] = strsplit((strsplit(file[i],'/',/extract))[-1],'fits',/regex,/extract)+'sav'
 
 for f = 0,nfiles-1 do begin
     ;; read data

@@ -114,8 +114,8 @@ param[0,where(param[2,*] eq 0.,/NULL)] = 0.
 ;; combine and output modeling parameters and object data
 fit_str = strjoin(fit_vars+':'+fit_vars,',')
 obj_str = strjoin(obj_vars+":"+obj_vars,",")
-re = execute('obj_data = soa2aos({'+obj_str+'})')
-re = execute('sed_out = {'+fit_str+',obj_data:obj_data}')
+re = execute('data = soa2aos({'+obj_str+'})')
+re = execute('sed_out = {'+fit_str+',data:data}')
 
 return, sed_out
 

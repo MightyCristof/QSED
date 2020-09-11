@@ -63,17 +63,24 @@ restore,file
 ;; number of sources in file
 nobj = n_elements(obs)						
 ;; arrays for resampling results
-ebv_sigm = dblarr(4,nobj)
-red_sigm = dblarr(4,nobj)
-lir_sigm = dblarr(4,nobj)
-fir_sigm = dblarr(4,nobj)
+sig_ebv = dblarr(4,nobj)
+sig_red = dblarr(4,nobj)
+sig_lir = dblarr(4,nobj)
+sig_fir = dblarr(4,nobj)
+;; fraction of realizations which contain AGN
+perc_agn = intarr(nobj)
 
-nrej = lonarr(nobj)
-;; boolean for bad fits
-bad_fit = bytarr(nobj)
-perc_agn = dblarr(nobj)
+;; run SED fitting
+sed_out = qsed_fit(obs,band)
+fit_vars = tag_names(sed_out)
+for v = 0,n_elements(fit_vars)-1 do re = execute(fit_vars[v]+' = SED_OUT.'+fit_vars[v])
+obj_vars = tag_names(data)
+for v = 0,n_elements(obj_vars)-1 do re = execute(obj_vars[v]+' = DATA.'+obj_vars[v])
+sav_vars = [fit_vars[0:-1],obj_vars]
+sav_str = strjoin(sav_vars,',')
+re = execute('save,'+sav_str+',/compress,file="fits.sav"')
 
-;; iterate over each object
+;; iterate over each object and resampling
 for i = 0,nobj-1 do begin
     ;; pull and replicate individual source
     this_obs = replicate(obs[i],niter)
@@ -99,17 +106,16 @@ for i = 0,nobj-1 do begin
     
     ;; run SED fitting
     sed_out = qsed_fit(this_obs,band)
-    fit_vars = ['PARAM','BAND','WAVE']
+    fit_vars = tag_names(sed_out)
     for v = 0,n_elements(fit_vars)-1 do re = execute(fit_vars[v]+' = SED_OUT.'+fit_vars[v])
-    obj_vars = tag_names(sed_out.obj_data)
-    obj_data = sed_out.obj_data
+    obj_vars = tag_names(data)
 
     ;; construct full SED output array for all objects
     if (i eq 0) then begin
-        param_resamp = dblarr(n_elements(param[*,0]),nobj)
-        band_resamp = band
-        wave_resamp = wave
-        obj_data_resamp = replicate(obj_data[0],nobj)
+        resamp_param = dblarr(n_elements(param[*,0]),nobj)
+        resamp_band = band
+        resamp_wave = wave
+        resamp_data = replicate(data[0],nobj)
     endif
     
     ;; SED output parameter distributions of realizations
@@ -117,12 +123,12 @@ for i = 0,nobj-1 do begin
     red_dist = this_obs.z
     c_a = reform(param[2,*])
     lir_dist = l_agn(6.,ebv_dist,red_dist,c_a)
-    dl2 = dlum(red_dist,/sq)
-    fir_dist = lir_dist/(4.*!const.pi*dl2)
+    dl2_dist = dlum(red_dist,/sq)
+    fir_dist = lir_dist/(4.*!const.pi*dl2_dist)
 
     ;; record the percentage of realizations containing AGN components
-    iagn = where(param[2,*] gt 0.,nagn)
-    perc_agn[i] = nagn*100./niter
+    iagn = where(c_a gt 0.,nagn)
+    perc_agn[i] = round(nagn*100./niter)
     ;; focus on realizations with AGN component
     if (nagn gt 0.) then begin
     ;; ============================
@@ -149,15 +155,15 @@ for i = 0,nobj-1 do begin
         if (nbest ne 1) then stop
         ;; input resampling results
         if (nagn eq 1) then begin
-            ebv_sigm[*,i] = [ebv_dist,-1.,ebv_dist,-1.]
-            red_sigm[*,i] = [red_dist,-1.,red_dist,-1.]
-            lir_sigm[*,i] = [lir_dist,-1.,lir_dist,-1.]
-            fir_sigm[*,i] = [fir_dist,-1.,fir_dist,-1.]
+            sig_ebv[*,i] = [ebv_dist,-1.,ebv_dist,-1.]
+            sig_red[*,i] = [red_dist,-1.,red_dist,-1.]
+            sig_lir[*,i] = [lir_dist,-1.,lir_dist,-1.]
+            sig_fir[*,i] = [fir_dist,-1.,fir_dist,-1.]
         endif else begin
-            ebv_sigm[*,i] = [median(ebv_dist),medabsdev(ebv_dist),mean(ebv_dist),stddev(ebv_dist)]
-            red_sigm[*,i] = [median(red_dist),medabsdev(red_dist),mean(red_dist),stddev(red_dist)]
-            lir_sigm[*,i] = [median(lir_dist),medabsdev(lir_dist),mean(lir_dist),stddev(lir_dist)]
-            fir_sigm[*,i] = [median(fir_dist),medabsdev(fir_dist),mean(fir_dist),stddev(fir_dist)]
+            sig_ebv[*,i] = [median(ebv_dist),medabsdev(ebv_dist),mean(ebv_dist),stddev(ebv_dist)]
+            sig_red[*,i] = [median(red_dist),medabsdev(red_dist),mean(red_dist),stddev(red_dist)]
+            sig_lir[*,i] = [median(lir_dist),medabsdev(lir_dist),mean(lir_dist),stddev(lir_dist)]
+            sig_fir[*,i] = [median(fir_dist),medabsdev(fir_dist),mean(fir_dist),stddev(fir_dist)]
         endelse
     endif else begin
     ;; ===================================
@@ -166,36 +172,30 @@ for i = 0,nobj-1 do begin
         rchi = param[-2,*]/param[-1,*]
         !NULL = min(rchi,ibest)
         
-        ebv_sigm[*,i] = -9999.
-        red_sigm[*,i] = [median(red_dist),medabsdev(red_dist),mean(red_dist),stddev(red_dist)]
-        lir_sigm[*,i] = -9999.
-        fir_sigm[*,i] = -9999.        
+        sig_ebv[*,i] = -9999.
+        sig_red[*,i] = [median(red_dist),medabsdev(red_dist),mean(red_dist),stddev(red_dist)]
+        sig_lir[*,i] = -9999.
+        sig_fir[*,i] = -9999.        
     endelse
     ;; best-fit SED for each object        
-    param_resamp[*,i] = param[*,ibest]
-    obj_data_resamp[i] = obj_data[ibest]
+    resamp_param[*,i] = param[*,ibest]
+    resamp_data[i] = data[ibest]
 endfor
-    
-;; save resampled fitting
-resamp_vars = ['MAG','FLUX','E_FLUX','Z','ZERR']
-for v = 0,n_elements(resamp_vars)-1 do re = execute(resamp_vars[v]+'_RESAMP = obj_data_resamp.'+resamp_vars[v])
-sav_vars = [resamp_vars+'_RESAMP',['EBV','RED','LIR','FIR']+'_SIGM','NREJ','BAD_FIT']
-sav_str = strjoin(sav_vars,',')
-re = execute('save,'+sav_str+',/compress,file="resamp.sav"')
-;endfor
 
-;; restore variables to original names and pull original data
-param = param_resamp
-for v = 0,n_elements(obj_vars)-1 do re = execute(obj_vars[v]+' = obs.'+obj_vars[v])
-;; save concatenated SED modeling variables in top directory
-sav_vars = [fit_vars,'perc_agn',obj_vars]
-sav_str = strjoin(sav_vars,',')
-re = execute('save,'+sav_str+',/compress,file="fits.sav"')
+;; save resampled fitting
+samp_vars = 'RESAMP_'+fit_vars
+nsav_vars = [samp_vars,'SIG_'+['EBV','RED','LIR','FIR'],'PERC_AGN']
+nsav_str = strjoin(nsav_vars,',')
+re = execute('save,'+nsav_str+',/compress,file="resamp.sav"')
 
 popd
 
 
 END
+
+
+
+
 
 
 

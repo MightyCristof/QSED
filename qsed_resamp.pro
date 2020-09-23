@@ -80,7 +80,7 @@ sav_vars = [fit_vars[0:-1],obj_vars]
 sav_str = strjoin(sav_vars,',')
 re = execute('save,'+sav_str+',/compress,file="fits.sav"')
 
-;; iterate over each object and resampling
+;; resample each object and refit for uncertainties
 for i = 0,nobj-1 do begin
     ;; pull and replicate individual source
     this_obs = replicate(obs[i],niter)

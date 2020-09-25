@@ -57,6 +57,14 @@ PRO read_sed_phot, file, $
 ;on_error,2
 ;npar = n_params()
 
+;; load mask only once
+if keyword_set(mask) then begin
+    ;; load reject mask
+    mask_dir = '~/IDLWorkspace/libraries/cmc/mangle_masks/'
+    wise_mask = mask_dir+'wise_mask_allwise_stars_pix.ply'
+    read_mangle_polygons,wise_mask,allwise
+endif
+
 nfiles = n_elements(file)
 outfile = strarr(nfiles)
 for i = 0,nfiles-1 do outfile[i] = strsplit((strsplit(file[i],'/',/extract))[-1],'fits',/regex,/extract)+'sav'
@@ -65,10 +73,17 @@ for f = 0,nfiles-1 do begin
     ;; read data
     data = mrdfits(file[f],1)
     
-    ;; SDSS and XDQSOz indices
+    ;; instrument indices
     iisdss = data.ra_sdss ne -9999. and data.dec_sdss ne -9999.
     isdss = where(iisdss,sdsslen)
-    ixdqso = where(~iisdss,xdqsolen,/null)
+    iixdqso = data.ra_xdqso ne -9999. and data.dec_xdqso ne -9999.
+    ixdqso = where(iixdqso and ~iisdss,xdqsolen,/null)
+    iizsupp = data.ra_zsupp ne -9999. and data.dec_zsupp ne -9999.
+    iiwise = data.ra_wise ne -9999. and data.dec_wise ne -9999.
+    iiunwise = data.ra_unwise ne -9999. and data.dec_unwise ne -9999.
+    iiukidss = data.ra_ukidss ne -9999. and data.dec_ukidss ne -9999.
+    iitwom = data.ra_2mass ne -9999. and data.dec_2mass ne -9999.
+    iigalex = data.ra_galex ne -9999. and data.dec_galex ne -9999.
     
     ;; number of catalog sources
     ndata = n_elements(data)
@@ -133,7 +148,8 @@ for f = 0,nfiles-1 do begin
         ;;             SDSS     GALEX   UKIDSS   WISE
         ;; psfflux==[u,g,r,i,z,NUV,FUV,Y,J,H,Ks,W1,W2]
         psfband = ['SDSS1','SDSS2','SDSS3','SDSS4','SDSS5','GALEX2','GALEX1','UK1','UK2','UK3','UK4','WISE1','WISE2']
-        match2,band,psfband,ix2f,if2x									;; EXTREMELY IMPORTANT!!!
+        match2,band,psfband,iix2f,if2x									;; EXTREMELY IMPORTANT!!!
+        ix2f = iix2f[where(iix2f ne -1,/null)]
         xdb = psfband[ix2f]
         xdf = nmgy2mujy * data[ixdqso].psfflux[ix2f]					;; here there is no WISE3/WISE4 match... so these are
         xde = nmgy2mujy * 1./sqrt(data[ixdqso].psfflux_ivar[ix2f])		;; replaced with SDSS1 (where psfband[ixd2f=-1]).
@@ -147,29 +163,32 @@ for f = 0,nfiles-1 do begin
         ;; remove observations where flux+err is not greater than background (flux == 0).
         ;; observations where flux+err > 0, set flux = (flux+error) / 2
         ineg = where(xdf lt 0.,negct)
-        if (negct gt 0.) then begin
-            pos_val = ((xdf[ineg]+xde[ineg])>0.)/2.
-            xdf[ineg] = pos_val
-        endif
+        if (negct gt 0.) then xdf[ineg] = ((xdf[ineg]+xde[ineg])>0.)/2.
         ;; convert WISE to AB 
-        iwise = where(strmatch(xdb,'WISE*'),ct)
+        iw12 = where(strmatch(xdb,'WISE*'),ct)
         if (ct eq 0) then stop
         v2ab = rebin(v2ab_flux[0:1],2,n_elements(xdf[0,*]))
-        xdf[iwise,*] *= v2ab
-        xde[iwise,*] *= v2ab
+        xdf[iw12,*] *= v2ab
+        xde[iw12,*] *= v2ab
         
         ;; add XDQSOz photometry to full photometry
         for i = 0,n_elements(band)-1 do begin
-            if (ix2f[i] eq -1) then continue							;; skip the unmatched WISE3/WISE4
-            re = execute(flux_vars[i]+'[ixdqso] = xdf[i,*]')
-            re = execute(e_flux_vars[i]+'[ixdqso] = xde[i,*]')
-            ;; compute XDQSOz mags and errors
-            re = execute(mag_vars[i]+'[ixdqso] = magflux(xdf[i,*],xde[i,*],xdb[i],err='+e_mag_vars[i]+'[ixdqso],/flux_in)')
+            ;; check for band match
+            im = (where(strmatch(xdb,band[i]),ct))[0]
+            if (ct eq 0) then continue
+            ;; check for valid photometry
+            ipos = where(xdf[im,*] gt 0. and xde[im,*] gt 0.,poslen)
+            if (poslen eq 0) then continue
+            re = execute(flux_vars[i]+'[ixdqso[ipos]] = xdf[im,ipos]')
+            re = execute(e_flux_vars[i]+'[ixdqso[ipos]] = xde[im,ipos]')
+            re = execute(mag_vars[i]+'[ixdqso[ipos]] = magflux(xdf[im,ipos],xde[im,ipos],xdb[im],err=xdmerr,/flux_in)')
+            re = execute(e_mag_vars[i]+'[ixdqso[ipos]] = xdmerr')
         endfor
     endif
 
     ;; add unWISE flux and calculate magnitudes
     if keyword_set(forced_phot) then begin
+        iirepir = bytarr(4,ndata)
         unwb = band[where(strmatch(band,'WISE*'),ct)]			;; unWISE band
         if (ct eq 0) then stop
         unwf = ['w1','w2','w3','w4']+'_nanomaggies'					;; unWISE flux
@@ -188,27 +207,33 @@ for f = 0,nfiles-1 do begin
             re = execute('ifin = where(~finite('+unwf[i]+') or ~finite('+e_unwf[i]+'),finct)')
             if (finct ne 0) then re = execute(unwf[i]+'[ifin] = 0. & '+e_unwf[i]+'[ifin] = 0.')
             ;; indices of negative fluxes
+            ;; where flux+error > 0, set flux = (flux+error) / 2 
             re = execute('ineg = where('+unwf[i]+' lt 0.,negct)')
-            if (negct ne 0) then begin
-                ;; where flux+error > 0, set flux = (flux+error) / 2 
-                re = execute('pos_val = (('+unwf[i]+'[ineg] + '+e_unwf[i]+'[ineg])>0.)/2.')
-                re = execute(unwf[i]+'[ineg] = pos_val')
-            endif
+            if (negct ne 0) then re = execute(unwf[i]+'[ineg] = (('+unwf[i]+'[ineg] + '+e_unwf[i]+'[ineg])>0.)/2.')
             ;; compute unWISE mags and errors
+            ;; keyword error out works here as it is creating the array
             re = execute(unw[i]+' = magflux('+unwf[i]+','+e_unwf[i]+',unwb[i],err='+e_unw[i]+',/flux_in)')
         endfor		
     
         ;; add unWISE photometry to full photometry
         for i = 0,n_elements(unwb)-1 do begin
-            iw = where(strmatch(band,unwb[i]),wct)				;; match unWISE band
+            iw = (where(strmatch(band,unwb[i]),wct))[0]				;; match unWISE band
             if (wct eq 0) then stop
-            re = execute('sn_wise = '+flux_vars[iw[0]]+'/'+e_flux_vars[iw[0]])
+            ;; use best S/N
+            re = execute('sn_sampl = '+flux_vars[iw]+'/'+e_flux_vars[iw])
             re = execute('sn_unw = '+unwf[i]+'/'+e_unwf[i])
-            irep = where(finite(sn_unw) and sn_unw gt sn_wise)
-            re = execute(mag_vars[iw[0]]+'[irep] = '+unw[i]+'[irep]')
-            re = execute(e_mag_vars[iw[0]]+'[irep] = '+e_unw[i]+'[irep]')
-            re = execute(flux_vars[iw[0]]+'[irep] = '+unwf[i]+'[irep]')
-            re = execute(e_flux_vars[iw[0]]+'[irep] = '+e_unwf[i]+'[irep]')
+            ;; first pass, S/N unWISE greater than sample (disregards non-finite values)
+            iigt = sn_unw gt sn_sampl
+            ;; replace non-finite sample with real-valued unWISE
+            iifi = finite(sn_unw) and ~finite(sn_sampl)
+            ;; combine
+            irep = where(iigt or iifi,repct,complement=iww)
+            if (repct eq 0) then continue
+            iirepir[i,irep] = 1
+            re = execute(mag_vars[iw]+'[irep] = '+unw[i]+'[irep]')
+            re = execute(e_mag_vars[iw]+'[irep] = '+e_unw[i]+'[irep]')
+            re = execute(flux_vars[iw]+'[irep] = '+unwf[i]+'[irep]')
+            re = execute(e_flux_vars[iw]+'[irep] = '+e_unwf[i]+'[irep]')
         endfor
     endif
     
@@ -237,18 +262,6 @@ for f = 0,nfiles-1 do begin
     endif
     ;; byte index for good photometry
     bin = flux gt 0. and e_flux gt 0.
-
-;    ;; remove 2MASS where UKIDSS is available
-;    i2m = where(strmatch(band,'TWOM?'),n2m)
-;    iuk = where(strmatch(band,'UK?'),nuk)
-;    if (n2m eq 3 and nuk eq 4) then begin
-;        iuk = iuk[1:-1]
-;        jhk_uk = bin[iuk,*]
-;        jhk_2m = bin[i2m,*]
-;        irem = where(total(jhk_uk,1) gt 0,nrem)
-;        if (nrem gt 0) then jhk_2m[*,irem] = 0
-;        bin[i2m,*] = jhk_2m
-;    endif
     
     ;; remove 2MASS band where UKIDSS band is available
     if (total(where([strmatch(band,'TWOM?'),strmatch(band,'UK?')])) gt 1) then begin
@@ -269,6 +282,10 @@ for f = 0,nfiles-1 do begin
             if (njhk eq 1) then bin[ijhk[0],where(iiqual[i,*] eq 0,/null)] = 0
         endfor
     endif
+    ;; 2MASS indices
+    ;i2mfilt = where(strmatch(band,'TWOM?'))
+    ;bin2m = bin[i2mfilt,*]
+    ;iitwom = total(bin2m,1) gt 0
     
     ;; full redshift data set in ascending order of use
     ;; ZP     == SDSS DR14 phot-z
@@ -323,6 +340,7 @@ for f = 0,nfiles-1 do begin
            flux: dblarr(nbands), $
            e_flux: dblarr(nbands), $
            bin: bytarr(nbands), $
+           repir: bytarr(4), $
            z: 0d, $
            zerr: 0d, $
            zstr: '', $
@@ -349,6 +367,8 @@ for f = 0,nfiles-1 do begin
     obs.e_flux = e_flux
     ;; good photometry flag
     obs.bin = bin
+    ;; IR replacement flag
+    if keyword_set(forced_phot) then obs.repir = iirepir
     ;; finalized source redshift information
     obs.z = zpref
     obs.zerr = zerrpref
@@ -363,72 +383,77 @@ for f = 0,nfiles-1 do begin
     ;; QUALITY CUTS (goodbye, sweet sources)
     ;; keep sources that...
     
-    ;; ..have clean photometry
-    ;; NOTE: After this step OBS and DATA are no longer the same length!
-    iiaccept = where(data.clean eq 1,ct,complement=irem)
-    if (ct eq 0) then continue
-    obs[irem].iiaccept = 0
-    		
-    ;; ...have redshift data!; loss of photo-z from photoerrorclass, etc. (sanity check)
-    iiaccept = where(obs.z ne 0.,ct,complement=irem)
-    if (ct eq 0) then continue
-    obs[irem].iiaccept = 0
+    ;; NOTE: If ACCEPT keyword set, after this step OBS and DATA are no longer the same length!
     
-    ;; ...have redshifts within specified range (phot-z ≤ 0.6; spec-z ≤ 1.0)
-    iizs = strmatch(obs.ztype,'ZS*') and obs.z le 1.0
-    iizp = strmatch(obs.ztype,'ZP') and obs.z le 0.6
-    iiaccept = where(iizs or iizp,ct,complement=irem)
+    ;; ...have redshifts within specified range (0 < phot-z ≤ 0.6; 0 < spec-z ≤ 1.0)
+    iizs = obs.z gt 0. and strmatch(obs.ztype,'ZS*') and obs.z le 1.0
+    iizp = obs.z gt 0. and (strmatch(obs.ztype,'ZP') or strmatch(obs.ztype,'PEAKZ')) and obs.z le 0.6
+    iizrang = iizs or iizp
+    iaccept = where(iizrang,ct,complement=irem)
     if (ct eq 0) then continue
     obs[irem].iiaccept = 0
     
     ;; ...have constrained redshift errors
-    iiaccept = where(obs.zerr ne 0.,ct,complement=irem)
+    iizerr = obs.zerr ne 0
+    iaccept = where(iizerr ne 0.,ct,complement=irem)
     if (ct eq 0) then continue
     obs[irem].iiaccept = 0
-    
+    iizgood = iizrang and iizerr
+
+    ;; ..have clean photometry
+    iiclean = data.clean eq 1
+    if (xdqsolen gt 0) then iiclean[ixdqso] = 1               ;; XDQSO photometry already verified
+    iaccept = where(iiclean eq 1,ct,complement=irem)
+    if (ct eq 0) then continue
+    obs[irem].iiaccept = 0
+
     ;; ...can be resampled in redshift space (redshift cuttoff z == 3)
     ;iiaccept = where(obs.z+4.*obs.zerr lt 3.,ct,complement=irem)
     ;if (ct eq 0.) then continue
     ;obs[irem].iiaccept = 0
     
     ;; ...have a minimum number of 7 photometric bands
-    iiaccept = where(total(obs.bin,1) ge 7,ct,complement=irem)
+    iibands = total(obs.bin,1) ge 7
+    iaccept = where(iibands,ct,complement=irem)
     if (ct eq 0) then continue 
     obs[irem].iiaccept = 0
     
     ;; ...have detections in all four WISE bands
     iwise = where(strmatch(band,'WISE?'),ct)
     if (ct eq 0) then continue
-    iiaccept = where(total(obs.bin[iwise],1) eq 4,ct,complement=irem)
+    iifourw = total(obs.bin[iwise],1) eq 4
+    iaccept = where(iifourw,ct,complement=irem)
     if (ct eq 0) then continue
     obs[irem].iiaccept = 0
 
     ;; ...aren't in the mask
+    iinomsk = 0b
     if keyword_set(mask) then begin
-        ;; load reject mask
-        mask_dir = '~/IDLWorkspace/libraries/cmc/mangle_masks/'
-        wise_mask = mask_dir+'wise_mask_allwise_stars_pix.ply'
-        read_mangle_polygons,wise_mask,allwise
         euler,obs.ra,obs.dec,gal_l,gal_b,1
         in_allwise=is_in_window_pix(ra=gal_l,dec=gal_b,allwise,scheme='6s')
-        iiaccept = where(~in_allwise,ct,complement=irem)		 ;; sources not in reject mask
+        iinomsk = ~in_allwise
+        iaccept = where(iinomsk,ct,complement=irem)		 ;; sources not in reject mask
         if (ct eq 0.) then continue
         obs[irem].iiaccept = 0
     endif
     
     ;; finally, no duplicate objects in data set!
+    iinodup = bytarr(ndata)
     if (n_elements(uniq(obs.objid,sort(obs.objid))) ne n_elements(obs)) then begin
         print, 'DUPLICATE SOURCE DETECTED!'
         obsid = obs.objid
         totbin = total(obs.bin,1)
         ;; remove duplicate objects, keep sources with most photometry
         ikeep = rem_dup(obsid,totbin)
-        obs = obs[ikeep]
+        iinodup[ikeep] = 1
+        iaccept = where(iinodup,ct,complement=irem)     ;; remove duplicates
+        if (ct eq 0.) then continue
+        obs[irem].iiaccept = 0
     endif
 
     if keyword_set(accept) then obs = obs[where(obs.iiaccept,/null)]
     
-    save,obs,band,/compress,file=outfile[f]
+    save,obs,band,iisdss,iixdqso,iizsupp,iiwise,iiunwise,iiukidss,iitwom,iigalex,iiclean,iizrang,iizerr,iizgood,iibands,iifourw,iinomsk,iinodup,/compress,file=outfile[f]
 endfor
 
 

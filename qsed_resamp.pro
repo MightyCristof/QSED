@@ -31,7 +31,8 @@
 PRO qsed_resamp, file, $
                  galtemp, $
                  comp, $
-                 niter
+                 niter, $
+                 PROG = prog
                  
 
 ;; load template grid variables
@@ -82,6 +83,12 @@ re = execute('save,'+sav_str+',/compress,file="fits.sav"')
 
 ;; resample each object and refit for uncertainties
 for i = 0,nobj-1 do begin
+    ;; print progress to screen
+    if keyword_set(prog) then begin
+        tenth = nobj/10
+        if ((i gt 0) and (i mod tenth eq 0)) then print, 'RESAMPLING PROGRESS: '+string(i*10./4322.,format='(i3)')+'% COMPLETE'
+    endif
+
     ;; pull and replicate individual source
     this_obs = replicate(obs[i],niter)
     

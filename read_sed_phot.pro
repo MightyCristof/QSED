@@ -394,7 +394,7 @@ for f = 0,nfiles-1 do begin
     obs[irem].iiaccept = 0
     
     ;; ...have constrained redshift errors
-    iizerr = obs.zerr ne 0 and obs.zerr lt 0.8
+    iizerr = obs.zerr ne 0 and obs.zerr lt 0.5
     iaccept = where(iizerr ne 0.,ct,complement=irem)
     if (ct eq 0) then continue
     obs[irem].iiaccept = 0

@@ -83,12 +83,6 @@ re = execute('save,'+sav_str+',/compress,file="fits.sav"')
 
 ;; resample each object and refit for uncertainties
 for i = 0,nobj-1 do begin
-    ;; print progress to screen
-    if keyword_set(prog) then begin
-        tenth = nobj/10
-        if (i mod tenth eq 0) then print, 'RESAMPLING PROGRESS: '+string(i*10./tenth,format='(i3)')+'% COMPLETE'
-    endif
-
     ;; pull and replicate individual source
     this_obs = replicate(obs[i],niter)
     
@@ -187,6 +181,12 @@ for i = 0,nobj-1 do begin
     ;; best-fit SED for each object        
     resamp_param[*,i] = param[*,ibest]
     resamp_data[i] = data[ibest]
+    
+    ;; print progress to screen
+    if keyword_set(prog) then begin
+        tenth = nobj/10
+        if (i mod tenth eq 0) then print, 'RESAMPLING PROGRESS: '+string(i*10./tenth,format='(i3)')+'% COMPLETE'
+    endif
 endfor
 
 ;; save resampled fitting

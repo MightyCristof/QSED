@@ -86,7 +86,7 @@ for i = 0,nobj-1 do begin
     ;; print progress to screen
     if keyword_set(prog) then begin
         tenth = nobj/10
-        if ((i gt 0) and (i mod tenth eq 0)) then print, 'RESAMPLING PROGRESS: '+string(i*10./4322.,format='(i3)')+'% COMPLETE'
+        if (i mod tenth eq 0) then print, 'RESAMPLING PROGRESS: '+string(i*10./tenth,format='(i3)')+'% COMPLETE'
     endif
 
     ;; pull and replicate individual source
@@ -107,9 +107,9 @@ for i = 0,nobj-1 do begin
     this_obs.zerr *= randomn(seed,niter)
     this_obs.z += this_obs.zerr
     izlo = where(this_obs.z lt 0.,nzlo)
-    if (nzlo gt 0) then this_obs[izlo].z = 0.
-    izhi = where(this_obs.z gt 0.999,nzhi)
-    if (nzhi gt 0) then this_obs[izhi].z = 3.
+    if (nzlo gt 0) then this_obs[izlo].z = abs(this_obs[izlo].z)
+    ;izhi = where(this_obs.z gt 2.999,nzhi)
+    ;if (nzhi gt 0) then this_obs[izhi].z = 3.
     
     ;; run SED fitting
     sed_out = qsed_fit(this_obs,band)

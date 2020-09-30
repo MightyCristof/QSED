@@ -385,10 +385,11 @@ for f = 0,nfiles-1 do begin
     
     ;; NOTE: If ACCEPT keyword set, after this step OBS and DATA are no longer the same length!
     
-    ;; ...have redshifts within specified range (0 < phot-z ≤ 0.6; 0 < spec-z ≤ 1.0)
-    iizs = obs.z gt 0. and strmatch(obs.ztype,'ZS*') and obs.z le 1.0
-    iizp = obs.z gt 0. and (strmatch(obs.ztype,'ZP') or strmatch(obs.ztype,'PEAKZ')) and obs.z le 0.6
-    iizrang = iizs or iizp
+    ;; ...have redshifts within specified range (0 < z-phot DR14 ≤ 0.6; 0 < z-phot XDQSOz ≤ 1.0; 0 < z-spec ≤ 1.0)
+    iizs = strmatch(obs.ztype,'ZS*')
+    iizp = strmatch(obs.ztype,'ZP') and obs.photoerrorclass ne -9999
+    iizx = strmatch(obs.ztype,'PEAKZ')
+    iizrang = obs.z gt 0. and obs.z lt 1. and (iizs or iizp or iizx)
     iaccept = where(iizrang,ct,complement=irem)
     if (ct eq 0) then continue
     obs[irem].iiaccept = 0

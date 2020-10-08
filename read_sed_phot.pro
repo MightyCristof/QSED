@@ -387,9 +387,9 @@ for f = 0,nfiles-1 do begin
     
     ;; ...have redshifts within specified range (0 < z-phot DR14 ≤ 0.6; 0 < z-phot XDQSOz ≤ 1.0; 0 < z-spec ≤ 1.0)
     iizs = strmatch(obs.ztype,'ZS*')
-    iizp = strmatch(obs.ztype,'ZP') and obs.photoerrorclass ne -9999
+    iizp = strmatch(obs.ztype,'ZP') and obs.photoerrorclass ge -1 and obs.photoerrorclass le 3
     iizx = strmatch(obs.ztype,'PEAKZ')
-    iizrang = obs.z gt 0. and obs.z lt 1. and (iizs or iizp or iizx)
+    iizrang = (iizs or iizp or iizx) and obs.z gt 0. and obs.z le 0.8
     iaccept = where(iizrang,ct,complement=irem)
     if (ct eq 0) then continue
     obs[irem].iiaccept = 0

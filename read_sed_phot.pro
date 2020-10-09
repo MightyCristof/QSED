@@ -79,6 +79,7 @@ for f = 0,nfiles-1 do begin
     iixdqso = data.ra_xdqso ne -9999. and data.dec_xdqso ne -9999.
     ixdqso = where(iixdqso and ~iisdss,xdqsolen,/null)
     iizsupp = data.ra_zsupp ne -9999. and data.dec_zsupp ne -9999.
+    iiages = data.ra_ages ne -9999. and data.dec_ages ne -9999.
     iiwise = data.ra_wise ne -9999. and data.dec_wise ne -9999.
     iiunwise = data.ra_unwise ne -9999. and data.dec_unwise ne -9999.
     iiukidss = data.ra_ukidss ne -9999. and data.dec_ukidss ne -9999.
@@ -286,14 +287,15 @@ for f = 0,nfiles-1 do begin
     ;i2mfilt = where(strmatch(band,'TWOM?'))
     ;bin2m = bin[i2mfilt,*]
     ;iitwom = total(bin2m,1) gt 0
-    
+    stop
     ;; full redshift data set in ascending order of use
     ;; ZP     == SDSS DR14 phot-z
     ;; PEAKZ  == XDQSOz (DiPompeo+15)
     ;; ZS     == SDSS DR14 spec-z
+    ;; Z1     == AGES z-spec
     ;; Z_SUPP == Reyes+08, Lacy+13, Hainline+14, Yuan+16
-    zdat = ['ZP','PEAKZ','ZS','ZSUPP']                ;; name of redshift tag
-    e_zdat = ['ZPERR','PEAKFWHM','ZSERR','ZSUPP']	;; name of redshift error tag; N/A for Z_SUPP so placeholder
+    zdat = ['ZP','PEAKZ','ZS','Z1','ZSUPP']                 ;; name of redshift tag
+    e_zdat = ['ZPERR','PEAKFWHM','ZSERR','S_N1','ZSUPP']    ;; name of redshift error tag; N/A for Z_SUPP so placeholder
     zstr = strarr(ndata)			;; all redshift data
     zerrstr = strarr(ndata)			;; all redshift error data
     zbin = strarr(ndata)            ;; valid redshift flag
@@ -305,10 +307,13 @@ for f = 0,nfiles-1 do begin
     ;; sort redshift data
     for i = 0,n_elements(zdat)-1 do begin
         re = execute('z_value = data.'+zdat[i]+' & z_error = data.'+e_zdat[i])    
+        if (zdat[i] eq 'Z1') then begin
+            inoerr = where(z_value gt 0.,nnoerr)
+            if (nnoerr gt 0) then z_error[inoerr] = z_value[inoerr]*0.01
+        endif    
         if (zdat[i] eq 'ZSUPP') then begin
-            isupp = where(strtrim(z_error,2),nsupp,complement=invalid)
-            if (nsupp gt 0) then z_error[isupp] = z_value[isupp]*0.05
-            z_error[invalid] = 0.       
+            inoerr = where(z_value gt 0. and z_error le 0,nnoerr)
+            if (nnoerr gt 0) then z_error[inoerr] = z_value[inoerr]*0.01       
         endif
         iiz = finite(z_value) and finite(z_error) and z_value gt 0. and z_error gt 0.
         iz = where(finite(z_value) and finite(z_error) and z_value gt 0. and z_error gt 0.,zlen)
@@ -388,7 +393,7 @@ for f = 0,nfiles-1 do begin
     ;; ...have redshifts within specified range (0 < z-phot DR14 ≤ 0.6; 0 < z-phot XDQSOz ≤ 1.0; 0 < z-spec ≤ 1.0)
     iizs = strmatch(obs.ztype,'ZS*')
     iizp = strmatch(obs.ztype,'ZP') and obs.photoerrorclass ge -1 and obs.photoerrorclass le 3
-    iizx = strmatch(obs.ztype,'PEAKZ')
+    iizx = strmatch(obs.ztype,'ZPXD')
     iizrang = (iizs or iizp or iizx) and obs.z gt 0. and obs.z le 0.8
     iaccept = where(iizrang,ct,complement=irem)
     if (ct eq 0) then continue

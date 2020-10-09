@@ -40,7 +40,7 @@ FUNCTION zorigin, zbin, $
 
 npar = n_params()
 
-zcat = ['ZP','PEAKZ','ZS','ZSUPP']
+zcat = ['ZP','ZPXD','ZS','ZSAGES','ZSUPP']
 iz = lonarr(n_elements(zbin))
 for i = 0,n_elements(zbin)-1 do iz[i] = max(where(strsplit(zbin[i],',',/extract,/preserve_null) eq 1.))
 

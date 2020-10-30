@@ -189,7 +189,7 @@ bp_names = bp_names[iinstr]
 
 ;; bandpass frequency bins necessary for convolution
 tempwav = wav # (1+ztemp)				;; wavelength x redshift
-nu = !const.c/(tempwav*1e-6)			;; frequency x redshift
+nu = !const.c/(tempwav*1e-6)            ;; frequency x redshift
 dnu = nu[0:-2,*]-nu[1:-1,*]				;; frequency bins
 dnu = [dnu,dnu[-1,*]]					;; match previous dimensions (shouldn't ever play a part in convolution process)
 
@@ -197,7 +197,7 @@ dnu = [dnu,dnu[-1,*]]					;; match previous dimensions (shouldn't ever play a pa
 ;; determine photometric band/column and convolve galtemps
 foreach inst, bp_names do begin
 	print, inst
-	re = execute('nbands = n_tags('+inst+')')				;; # of filters in inst
+	re = execute('nbands = n_tags('+inst+')')               ;; # of filters in inst
 	for band = 0,nbands-1 do begin
 		thru = dblarr(tlen,zlen)							;; throughput array
 		for z = 0,zlen-1 do re = execute('thru[*,z] = interpol('+inst+'.(band).thru,'+inst+'.(band).wave,tempwav[*,z])')	;; step through each redshift and interpolate

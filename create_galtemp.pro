@@ -13,10 +13,10 @@
 ;   create_galtemp, save_file, ebv_agn, ztemp, instr
 ;	
 ; INPUTS:
-;   savfile		- String containing the output file name.
-;	ebv_agn			- Vector of color excess values for constructing template grid.
+;   savfile         - String containing the output file name.
+;   ebv_agn			- Vector of color excess values for constructing template grid.
 ;   ztemp			- Vector of redshift values for constructing template grid.
-;	instr			- String array containing the desired instruments to be
+;   instr			- String array containing the desired instruments to be
 ;                     used in constructing the template grid.
 ;	
 ; OPTIONAL INPUTS:

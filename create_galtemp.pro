@@ -23,7 +23,7 @@
 ;	
 ; OUTPUTS:
 ;   temp			- Template SED grid.
-;	wavband			- String array of photometric filters.
+;   wavband			- String array of photometric filters.
 ;   obswav			- Array of central wavelength values matched to wavband.
 ;   
 ; OPTIONAL OUTPUTS:

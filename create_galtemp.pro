@@ -91,7 +91,7 @@ obswav = []
 
 ;; compile tags and wavelengths for template grid
 foreach inst,instr do begin
-	case inst of
+    case inst of
         'GALEX': begin
             wavband = [wavband,'GALEX1','GALEX2']
             obswav = [obswav,0.153862,0.231566]
@@ -144,7 +144,7 @@ foreach inst,instr do begin
             wavband = [wavband,'SPIRE1','SPIRE2','SPIRE3']
             obswav = [obswav,250.,350.,500.]
             end
-	endcase
+    endcase
 endforeach
 		    
 ;;commonly used array lengths

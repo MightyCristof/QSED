@@ -92,58 +92,58 @@ obswav = []
 ;; compile tags and wavelengths for template grid
 foreach inst,instr do begin
 	case inst of
-		'GALEX': begin
-			wavband = [wavband,'GALEX1','GALEX2']
-			obswav = [obswav,0.153862,0.231566]
-			end
+        'GALEX': begin
+            wavband = [wavband,'GALEX1','GALEX2']
+            obswav = [obswav,0.153862,0.231566]
+            end
         'SDSS': begin
-			wavband = [wavband,'SDSS1','SDSS2','SDSS3','SDSS4','SDSS5']
-			obswav = [obswav,0.354,0.475,0.622,0.763,0.905]
-			end
-		'HSC': begin
-			wavband = [wavband,'HSC1','HSC2','HSC3','HSC4','HSC5']
-			obswav = [obswav,0.4754,0.6175,0.7711,0.8898,0.9762]
-			end
-		'PANS': begin
-			wavband = [wavband,'PANS1','PANS2','PANS3','PANS4','PANS5']
-			obswav = [obswav,0.481,0.617,0.752,0.866,0.962]
-		    end
-		'UK': begin
-			wavband = [wavband,'UK1','UK2','UK3','UK4']
-			obswav = [obswav,1.0305,1.2483,1.6313,2.2010]
-			end
-		'TWOM': begin
-			wavband = [wavband,'TWOM1','TWOM2','TWOM3']
-			obswav = [obswav,1.235,1.662,2.159]
-			end
-		'FLMX': begin
-			wavband = [wavband,'FLMX1','FLMX2']
-			obswav = [obswav,1.250,2.215]
-			end
-		'WISE': begin
-			wavband = [wavband,'WISE1','WISE2','WISE3','WISE4']
-			obswav = [obswav,3.4,4.6,12.,22.]
-			end
-		'IRAC': begin
-			wavband = [wavband,'IRAC1','IRAC2','IRAC3','IRAC4']
-			obswav = [obswav,3.6,4.5,5.8,8.]
-			end
-		'IRAS': begin
-		    wavband = [wavband,'IRAS1','IRAS2','IRAS3','IRAS4']
-		    obswav = [obswav,12.,25.,60.,100.]
-		    end
-		'MIPS': begin
-			wavband = [wavband,'MIPS1','MIPS2','MIPS3']
-			obswav = [obswav,24.,70.,160.]
-			end
-		'PACS': begin
-			wavband = [wavband,'PACS1','PACS2','PACS3']
-			obswav = [obswav,70.,100.,160.]
-			end
-		'SPIRE': begin
-			wavband = [wavband,'SPIRE1','SPIRE2','SPIRE3']
-			obswav = [obswav,250.,350.,500.]
-			end
+            wavband = [wavband,'SDSS1','SDSS2','SDSS3','SDSS4','SDSS5']
+            obswav = [obswav,0.354,0.475,0.622,0.763,0.905]
+            end
+        'HSC': begin
+            wavband = [wavband,'HSC1','HSC2','HSC3','HSC4','HSC5']
+            obswav = [obswav,0.4754,0.6175,0.7711,0.8898,0.9762]
+            end
+        'PANS': begin
+            wavband = [wavband,'PANS1','PANS2','PANS3','PANS4','PANS5']
+            obswav = [obswav,0.481,0.617,0.752,0.866,0.962]
+            end
+        'UK': begin
+            wavband = [wavband,'UK1','UK2','UK3','UK4']
+            obswav = [obswav,1.0305,1.2483,1.6313,2.2010]
+            end
+        'TWOM': begin
+            wavband = [wavband,'TWOM1','TWOM2','TWOM3']
+            obswav = [obswav,1.235,1.662,2.159]
+            end
+        'FLMX': begin
+            wavband = [wavband,'FLMX1','FLMX2']
+            obswav = [obswav,1.250,2.215]
+            end
+        'WISE': begin
+            wavband = [wavband,'WISE1','WISE2','WISE3','WISE4']
+            obswav = [obswav,3.4,4.6,12.,22.]
+            end
+        'IRAC': begin
+            wavband = [wavband,'IRAC1','IRAC2','IRAC3','IRAC4']
+            obswav = [obswav,3.6,4.5,5.8,8.]
+            end
+        'IRAS': begin
+            wavband = [wavband,'IRAS1','IRAS2','IRAS3','IRAS4']
+            obswav = [obswav,12.,25.,60.,100.]
+            end
+        'MIPS': begin
+            wavband = [wavband,'MIPS1','MIPS2','MIPS3']
+            obswav = [obswav,24.,70.,160.]
+            end
+        'PACS': begin
+            wavband = [wavband,'PACS1','PACS2','PACS3']
+            obswav = [obswav,70.,100.,160.]
+            end
+        'SPIRE': begin
+            wavband = [wavband,'SPIRE1','SPIRE2','SPIRE3']
+            obswav = [obswav,250.,350.,500.]
+            end
 	endcase
 endforeach
 		    

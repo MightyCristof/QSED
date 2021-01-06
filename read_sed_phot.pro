@@ -287,7 +287,7 @@ for f = 0,nfiles-1 do begin
     ;i2mfilt = where(strmatch(band,'TWOM?'))
     ;bin2m = bin[i2mfilt,*]
     ;iitwom = total(bin2m,1) gt 0
-    stop
+    
     ;; full redshift data set in ascending order of use
     ;; ZP     == SDSS DR14 phot-z
     ;; PEAKZ  == XDQSOz (DiPompeo+15)

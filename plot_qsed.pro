@@ -44,7 +44,7 @@ PRO plot_qsed, obswav, $
                TEMP = temp, $
                IND = ind, $
                SAV = sav, $
-               SHOW = show, $
+               HIDE = hide, $
                RESTFRAME = restframe      
 
 
@@ -125,8 +125,8 @@ label = transpose([['ID: '+strtrim(id,2)],['$\itz\rm: $'+z],['$\itE(B-V)\rm$: '+
 ;; plot SEDs
 e = {xr:[0.05,30.],yra:[floor(min(flux[where(finite(flux))]))-1.5,ceil(max(flux[where(finite(flux))]))+2.],xlog:1, $
      xtitle:xtitle, ytitle:'$log( \nu \itF\rm_\nu  /  [ erg s^{-1} cm^{-2} ] )$', $
-     nodata:1,buffer:1}
-if keyword_set(show) then e.buffer = 0
+     nodata:1,buffer:0}
+if keyword_set(hide) then e.buffer = 1
 
 for i = 0,nobj-1 do begin
     ;; plot good photometry

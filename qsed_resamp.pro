@@ -59,7 +59,7 @@ date_str = string(y, format='(I4.2)') + $
 
 ;; begin
 print, 'Fitting: '+file
-restore,file
+restore,'../'+file
 
 ;; number of sources in file
 nobj = n_elements(obs)						

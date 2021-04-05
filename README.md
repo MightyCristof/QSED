@@ -1,10 +1,8 @@
-# qsed
-# 
-# Fast SED modeling with low-resolution galaxy+AGN templates.
-# 
-# Christopher M. Carroll
-# 
-#
+# qsed 
+Fast SED modeling with low-resolution galaxy+AGN templates.
+Christopher M. Carroll
+ 
+
 # Steps to run SED modeling
 
 1. Add directory to !PATH using the your idl_startup file or similar.

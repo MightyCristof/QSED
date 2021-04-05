@@ -6,38 +6,43 @@
 ;	Batch large samples of sources for call to qsed_zs_multi, and combine output.
 ;	
 ; CALLING SEQUENCE:
-;   qsed_batch, dir
+;   qsed_resamp, phot_file, temp_file, comp_file, niter [, /VERBOSE ] )
 ;	
 ; INPUTS:
-;	files			- String array of input data file for SED modeling.
+;	phot_file		- String naming the prepared photometry (e.g., "test_data_READY.sav").
+;   temp_file       - String naming the model grid (e.g., "galtemp.sav").
+;   comp_file       - String naming the template components (e.g., "comp.sav").
+;   niter           - Number of iterations for modeling.
 ; 
 ; OPTIONAL INPUTS:
 ;   
 ; OUTPUTS:
-;   fits			- Combined output of multi-batch qsed_zs_multi calls.
+;   fits.sav		- SED modeling output.
+;   resamp.sav      - Uncertainy measurements.
 ;	
 ; OPTIONAL OUTPUTS:
-;  
+;   VERBOSE         - Print alert to screen confirming progress.
+;   
 ; COMMENTS:
 ;   
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;	LOAD_GT.PRO, QSED_ZS_MULTI.PRO
+;	LOAD_VARS.PRO, QSED_FIT.PRO
 ;
 ; REVISION HISTORY:
 ;   2017-Feb-17  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-PRO qsed_resamp, file, $
-                 galtemp, $
-                 comp, $
+PRO qsed_resamp, phot_file, $
+                 temp_file, $
+                 comp_file, $
                  niter, $
-                 PROG = prog
+                 VERBOSE = verbose
                  
 
 ;; load template grid variables
-load_gt, galtemp
-load_comp, comp
+load_vars,'models/'+temp_file,'_galtemp'
+load_vars,'templates/'+comp_file,'_comp'
 ;load_gt,'galtemp_*.sav',/push
 
 ;; create runtime directory
@@ -49,8 +54,8 @@ fit_str = string(y, format='(I4.2)') + $
           string(h, format=fs) + $
           string(m, format=fs)
 fit_dir = 'run_' + fit_str
-file_mkdir, fit_dir
-pushd, fit_dir
+file_mkdir, 'output/'+fit_dir
+pushd, 'output/'+fit_dir
 
 ;; create date string
 date_str = string(y, format='(I4.2)') + $
@@ -58,8 +63,9 @@ date_str = string(y, format='(I4.2)') + $
            string(d, format=fs) + '-'
 
 ;; begin
-print, 'Fitting: '+file
-restore,'../'+file
+print, '=============================================='
+print, 'BEGIN - FITTING: '+phot_file
+restore,'../../data/'+phot_file
 
 ;; number of sources in file
 nobj = n_elements(obs)						
@@ -81,6 +87,8 @@ sav_vars = [fit_vars[0:-1],obj_vars]
 sav_str = strjoin(sav_vars,',')
 re = execute('save,'+sav_str+',/compress,file="fits.sav"')
 
+;; counter for verbose keyword
+ncount = ceil(nobj/10.)*10.
 ;; resample each object and refit for uncertainties
 for i = 0,nobj-1 do begin
     ;; pull and replicate individual source
@@ -183,11 +191,11 @@ for i = 0,nobj-1 do begin
     resamp_data[i] = data[ibest]
     
     ;; print progress to screen
-    if keyword_set(prog) then begin
-        tenth = nobj/10
-        if (i mod tenth eq 0) then print, 'RESAMPLING PROGRESS: '+string(i*10./tenth,format='(i3)')+'% COMPLETE'
-    endif
+    if keyword_set(verbose) then $
+        if ((i ne 0) and (i mod (ncount/10) eq 0)) then print, '      - '+string(100.*i/ncount,format='(i2)')+'% COMPLETE'
 endfor
+print, 'END   - FITTING'
+print, '=============================================='
 
 ;; save resampled fitting
 samp_vars = 'RESAMP_'+fit_vars

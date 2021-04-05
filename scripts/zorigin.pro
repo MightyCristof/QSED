@@ -12,6 +12,8 @@
 ; INPUTS:
 ;   zbin            - String array containing byte flags from multiple catalogs, 
 ;                     separated by ','.
+;   zstr            - String array containing redshifts from multiple catalogs, 
+;                     separated by ','.
 ;
 ; OPTIONAL INPUTS:
 ;   

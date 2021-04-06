@@ -1,4 +1,4 @@
-# qsed 
+# qSED
 
 Fast SED modeling with low-resolution galaxy+AGN templates.
 

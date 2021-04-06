@@ -1,6 +1,6 @@
 # qSED
 
-Fast SED modeling with low-resolution galaxy+AGN templates.
+Fast "quasar" SED modeling with low-resolution galaxy+AGN templates.
 
 Christopher M. Carroll
  

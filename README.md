@@ -2,7 +2,7 @@
 
 Fast "quasar" SED modeling with low-resolution galaxy + AGN templates.
 
-Christopher M. Carroll
+-- Christopher M. Carroll
  
 
 # Steps to run SED modeling

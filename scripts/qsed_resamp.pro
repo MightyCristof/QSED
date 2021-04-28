@@ -3,7 +3,8 @@
 ;	qsed_resamp
 ;
 ; PURPOSE:
-;	Batch large samples of sources for call to qsed_zs_multi, and combine output.
+;	Run N iterations of QSED_FIT, resampling photometry and redshift to estimate 
+;       parameter uncertainties.
 ;	
 ; CALLING SEQUENCE:
 ;   qsed_resamp, phot_file, temp_file, comp_file, niter [, /VERBOSE ] )
@@ -44,6 +45,10 @@ PRO qsed_resamp, phot_file, $
 load_vars,'models/'+temp_file,'_galtemp'
 load_vars,'templates/'+comp_file,'_comp'
 ;load_gt,'galtemp_*.sav',/push
+
+;; load Moustakas cosmology routines
+;; download at: https://github.com/jlfischer/red-idl-cosmology
+red,h100=0.7d
 
 ;; create runtime directory
 fs = '(I2.2)'

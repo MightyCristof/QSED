@@ -27,7 +27,7 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;	LLS.PRO
+;	LLS.PRO, COMBIGEN.PRO (download at http://www.simulated-galaxies.ua.edu/jbiu/)
 ;
 ; REVISION HISTORY:
 ;   2014-Dec-12  Written by Christopher M. Carroll (Dartmouth)

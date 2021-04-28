@@ -3,6 +3,7 @@
 ;	qsed_fit
 ;
 ; PURPOSE:
+;   Fit SED models to input data.
 ;	
 ; CALLING SEQUENCE:
 ;   qsed_fit, phot, filts

@@ -4,6 +4,23 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
 
 -- Christopher M. Carroll
  
+ 
+ ========================================================================================= 
+ This SED modeling using code from external libraries:
+ 
+ Jeremy Bailin's IDL Utilities
+    COMBIGEN.PRO
+    http://www.simulated-galaxies.ua.edu/jbiu/
+ 
+ Cosmology Routines
+    RED.PRO, COSMOLOGY_ROUTINES.PRO
+    https://github.com/jlfischer/red-idl-cosmology/blob/master/red.pro
+ 
+ They above scripts are not included in this package.
+ Please make sure you have the necessary libraries before moving on!
+ 
+ ========================================================================================= 
+ 
 
 # Steps to run qSED modeling
 
@@ -89,7 +106,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
 
         load_vars,'models/galtemp.sav','_galtemp'
         load_vars,'templates/comp.sav','_comp'
-        qSED_resamp,'test_data_READY.sav','galtemp.sav','comp.sav',1000,/verbose
+        qsed_resamp,'test_data_READY.sav','galtemp.sav','comp.sav',1000,/verbose
 
    For very large datasets, you may find the /VERBOSE keyword useful, which will print an 
    alert to screen to keep you updated on qSED progress (every 10% of input sources).

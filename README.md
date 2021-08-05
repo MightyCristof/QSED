@@ -1,4 +1,4 @@
-# qSED: quasar spectral energy distribution
+# QSED: quasar spectral energy distribution
 
 Fast SED modeling with low-resolution galaxy + AGN templates.
 
@@ -27,7 +27,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
 1. Add directory to !PATH using the your idl_startup file or similar.
 
    If you'd like to run without permanently adding to your !PATH (i.e., on a case-by-case 
-   basis), move to the "qSED/" directory and run the following from the command line:
+   basis), move to the "qsed/" directory and run the following from the command line:
 
         .r scripts/add_dir2path
 
@@ -41,7 +41,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
    folder. Make sure the bandpass files are labeled in such a way that they are in 
    ascending order of increasing wavelength.
         Ex: WISE  -- RSR-W1.txt, RSR-W2.txt, ... (3.4-micron, 4.6-micron, ...)
-        GALEX -- 01-GALEX.FUV.dat, 02-GALEX.NUV.dat (135–175 nm, 175–280 nm)
+        GALEX -- 01-GALEX.FUV.dat, 02-GALEX.NUV.dat (135√ê175 nm, 175√ê280 nm)
 
    2.) Modify the script "MAGFLUX.PRO" to include the new instrument with associated
    zero points for magnitude-flux conversion.
@@ -61,11 +61,11 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
         prep_raw_templates
    
 
-4. This qSED modeling using a grid-based approach to find the best-fit model per source. 
+4. This QSED modeling using a grid-based approach to find the best-fit model per source. 
    The SED grid models are stored in the "models/" directory. A sample grid ("galtemp.sav") 
    has been provided that uses GALEX/SDSS/UKIDSS/2MASS/WISE, and covers a parameter space
-   of 0 < E(B-V)_AGN < 50 with spacing ∆E(B-V) = 0.05 dex, and 0.00 < z < 3.00 with 
-   spacing ∆z = 0.01.
+   of 0 < E(B-V)_AGN < 50 with spacing √ÜE(B-V) = 0.05 dex, and 0.00 < z < 3.00 with 
+   spacing √Üz = 0.01.
    
    To create a different "galtemp", use the procedure "create_galtemp.pro", 
    and input your preferred color excess, redshift, and instruments. Run the following 
@@ -82,7 +82,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
         create_galtemp,'galtemp.sav',ebv,red,inst
 
 
-5. Prep photometry for qSED modeling. The procedure "READ_CARROL2021.PRO" is specific to 
+5. Prep photometry for QSED modeling. The procedure "READ_CARROL2021.PRO" is specific to 
    my own dataset for Carroll+2021. I've provided it for reference, as well as a more 
    generalized procedure, "READ_PHOTOMETRY.PRO". The procedure assumes the data is 
    contained in a .FITS file and in the "data/" directory. It also assumes the names of 
@@ -98,7 +98,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
    and ready for SED modeling.
    
 
-6. Run the qSED modeling! The qSED modeling resamples the photometric errors on each source
+6. Run the QSED modeling! The QSED modeling resamples the photometric errors on each source
    a number of times specified on input. The procedure is pretty fast, so you can test the
    speed with your own dataset to decide the number of iterations you need.
    
@@ -109,7 +109,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
         qsed_resamp,'test_data_READY.sav','galtemp.sav','comp.sav',1000,/verbose
 
    For very large datasets, you may find the /VERBOSE keyword useful, which will print an 
-   alert to screen to keep you updated on qSED progress (every 10% of input sources).
+   alert to screen to keep you updated on QSED progress (every 10% of input sources).
 
 
 

@@ -1,4 +1,4 @@
-# QSED: quasar spectral energy distribution
+# QSED: QSO Spectral Energy Distribution
 
 Fast SED modeling with low-resolution galaxy + AGN templates.
 

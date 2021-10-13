@@ -29,7 +29,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
    If you'd like to run without permanently adding to your !PATH (i.e., on a case-by-case 
    basis), move to the "qsed/" directory and run the following from the command line:
 
-        .r scripts/add_dir2path
+        .r scripts/add2path
 
 
 2. Bandpass information is provided for all instruments in the "bandpass" directory, and 

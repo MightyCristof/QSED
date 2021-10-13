@@ -128,13 +128,15 @@ for f = 0,nfiles-1 do begin
     bin = flux gt 0. and e_flux gt 0.
     
     ;; remove 2MASS band where UKIDSS band is available
-    if (total(where([strmatch(band,'TWOM?'),strmatch(band,'UK?')])) gt 1) then begin
-        jhk =['1','2','3','4']
-        for i = 0,2 do begin
-            ijhk = where([strmatch(band,'TWOM'+jhk[i]),strmatch(band,'UK'+jhk[i+1])],njhk)
-            if (njhk eq 2) then bin[ijhk[0],where(bin[ijhk[1]-nbands,*],/null)] = 0
-        endfor
-    endif
+    for i = 0,2 do begin
+        ;; match J==TWOM1/UK2, H==TWOM2/UK3, K==TWOM3/UK4
+        ijhk = where([strmatch(band,'TWOM'+jhk[i]),strmatch(band,'UK'+jhk[i+1])],njhk)
+        if (njhk eq 2) then begin
+            ;; check for UK detection and remove 2MASS where found
+            iuk_det = where(bin[ijhk[1]-nbands,*] eq 1,/null)
+            bin[ijhk[0],iuk_det] = 0
+        endif
+    endfor
         
     ;; add redshift data
     z = dblarr(ndata)

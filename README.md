@@ -5,7 +5,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
 -- Christopher M. Carroll
  
  
- ========================================================================================= 
+ ==================================================================================== 
  This SED modeling using code from external libraries:
  
  Jeremy Bailin's IDL Utilities
@@ -19,7 +19,7 @@ Fast SED modeling with low-resolution galaxy + AGN templates.
  They above scripts are not included in this package.
  Please make sure you have the necessary libraries before moving on!
  
- ========================================================================================= 
+ ==================================================================================== 
  
 
 # Steps to run qSED modeling
